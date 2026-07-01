@@ -29,11 +29,35 @@ const nextConfig = {
     optimizePackageImports: ["recharts", "framer-motion", "@tanstack/react-table"],
   },
 
+  // Keep native-binary packages outside the Next.js server bundle.
+  // Prisma generates a .node query engine; @node-rs/argon2 is a Rust binary.
+  // Bundling either causes "cannot find module" errors in the output directory.
+  serverExternalPackages: ["@prisma/client", "@node-rs/argon2"],
+
+  // Explicit no-ignore policy — fail the build on type errors and lint violations.
+  // Both fields default to false (ignore), so this documents intent and prevents
+  // a future next.config change from silently weakening the gate.
+  typescript: { ignoreBuildErrors: false },
+  eslint: { ignoreDuringBuilds: false },
+
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      {
+        // Employee photos and documents under /public/uploads/.
+        // Filenames are timestamped (emp-{id}-{timestamp}.ext) so each upload
+        // gets a unique URL — safe to cache aggressively in the browser.
+        // 30 days max-age + 1 day stale-while-revalidate for a smooth UX on slow links.
+        source: "/uploads/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=2592000, stale-while-revalidate=86400",
+          },
+        ],
       },
     ];
   },
