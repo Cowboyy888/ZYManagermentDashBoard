@@ -1,0 +1,417 @@
+// ZYSTEEL HR — Prisma schema
+// Companion to docs/architecture.md. Decisions §3.1–§3.5 are realized here.
+// Target: PostgreSQL. Edge driver configured in src/lib/db.ts (see arch §3.4).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Better Auth session tables (arch §4)
+// ─────────────────────────────────────────────────────────────
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Identity & access (arch §4, product §2)
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  HR_MANAGER
+  SUPERVISOR
+  VIEWER
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  role          Role     @default(VIEWER)
+  passwordHash  String?
+  emailVerified Boolean  @default(false)
+  image         String?
+  // A supervisor is scoped to one department (arch: line-level access)
+  departmentId  Int?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions     Session[]
+  accounts     Account[]
+  auditLogs    AuditLog[]
+  payrollRuns  PayrollRun[] @relation("RunCreatedBy")
+
+  @@index([role])
+  @@map("user")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Org & people (arch §3.2 — integer IDs are the only join key)
+// ─────────────────────────────────────────────────────────────
+
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique          // e.g. "Wire Drawing", "Mesh Welding", "Office"
+  nameKh    String?                       // Khmer label
+  nameZh    String?                       // Chinese label
+  employees Employee[]
+  users     User[]
+  createdAt DateTime   @default(now())
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  TERMINATED
+}
+
+// ─────────────────────────────────────────────────────────────
+// HR extension tables
+// ─────────────────────────────────────────────────────────────
+
+model Position {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  level       Int        @default(1)   // 1=Worker, 2=Team Leader, 3=Manager, 4=Director
+  description String?
+  createdAt   DateTime   @default(now())
+  employees   Employee[]
+}
+
+model FactoryArea {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  code        String     @unique        // e.g. "WD", "MW", "QC"
+  description String?
+  createdAt   DateTime   @default(now())
+  employees   Employee[]
+}
+
+enum DocumentType {
+  RESUME
+  PASSPORT
+  ID_CARD
+  VISA
+  WORK_PERMIT
+  CONTRACT
+  CERTIFICATE
+  MEDICAL
+  OTHER
+}
+
+model EmployeeDocument {
+  id           BigInt       @id @default(autoincrement())
+  employeeId   Int
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type         DocumentType
+  filename     String
+  url          String
+  fileSize     Int?
+  mimeType     String?
+  expiryDate   DateTime?    @db.Date
+  notes        String?
+  uploadedById String?
+  createdAt    DateTime     @default(now())
+
+  @@index([employeeId])
+}
+
+model Employee {
+  id           Int      @id @default(autoincrement())
+  // Bilingual identity (arch §3.2): all three are labels; id is the key.
+  nameKh       String                       // Khmer — canonical local name
+  nameZh       String?                      // Chinese — present for some staff (阿山, 阿明)
+  nameEn       String                       // Romanization for latin-script display
+  // HR profile fields
+  employeeCode String?  @unique             // e.g. "EMP-001"
+  photoUrl     String?
+  gender       String?                      // MALE / FEMALE / OTHER
+  birthday     DateTime? @db.Date
+  nationality  String?  @default("Cambodian")
+  phone        String?
+  email        String?
+  address      String?
+  emergencyContact Json?                    // {name, phone, relation}
+  // Position & assignment
+  positionId   Int?
+  position     Position?   @relation(fields: [positionId], references: [id])
+  factoryAreaId Int?
+  factoryArea  FactoryArea? @relation(fields: [factoryAreaId], references: [id])
+  productionLine String?
+  shift        String?     @default("DAY")  // DAY / AFTERNOON / NIGHT
+  supervisorId Int?
+  supervisor   Employee?   @relation("Subordinates", fields: [supervisorId], references: [id])
+  subordinates Employee[]  @relation("Subordinates")
+  // Employment
+  dailyRateUsd Decimal @db.Decimal(10, 2)
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  hireDate     DateTime @db.Date
+  contractExpiry DateTime? @db.Date
+  probationEnd DateTime?  @db.Date
+  status       EmploymentStatus @default(ACTIVE)
+  note         String?                      // free remarks (e.g. "19日入职", role notes)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attendance   AttendanceDay[]
+  overtime     OvertimeEntry[]
+  payslips     Payslip[]
+  documents    EmployeeDocument[]
+
+  @@index([departmentId])
+  @@index([status])
+  @@index([positionId])
+  @@index([factoryAreaId])
+  @@index([supervisorId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Attendance — marks not timestamps (arch §3.3)
+// One row per employee per date; AM + PM each a status.
+// ─────────────────────────────────────────────────────────────
+
+enum AttendanceMark {
+  PRESENT   // √
+  LEAVE     // △  (permitted leave)
+  ABSENT    // ×
+}
+
+model AttendanceDay {
+  id         BigInt   @id @default(autoincrement())
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  am         AttendanceMark
+  pm         AttendanceMark
+  // Optional: distinguishes permitted vs unpermitted absence in reporting
+  leaveType  LeaveType?
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // The only hot query shape: a person's marks within a date window.
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  SPECIAL      // Cambodian special leave
+  UNPAID
+  PERMITTED    // generic permitted (△) when subtype unknown
+}
+
+model LeaveRequest {
+  id          BigInt    @id @default(autoincrement())
+  employeeId  Int
+  type        LeaveType
+  startDate   DateTime  @db.Date
+  endDate     DateTime  @db.Date
+  halfDay     Boolean   @default(false)   // supports the 0.5-day cases in real data
+  status      ApprovalStatus @default(PENDING)
+  reason      String?
+  decidedById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([employeeId, startDate])
+  @@index([status])
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────────────────────
+// Overtime — value derived, never trusted (arch §3.5)
+// ─────────────────────────────────────────────────────────────
+
+enum OvertimeBand {
+  NORMAL_1_5   // working-day OT, 1.5×  (e.g. 16:30–18:00)
+  NIGHT_2_0    // night work, 2.0×       (e.g. 18:00–20:00 / 22:00–05:00)
+  HOLIDAY_2_0  // Sunday / public holiday work, 2.0×
+}
+
+model OvertimeEntry {
+  id           BigInt   @id @default(autoincrement())
+  employeeId   Int
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date          // single date ⇒ clean period filtering (risk: split incidents)
+  hours        Decimal  @db.Decimal(5, 2)
+  band         OvertimeBand
+  description  String?                     // e.g. "安排出货" / "拔丝机"
+  status       ApprovalStatus @default(APPROVED)
+  // amountUsd is stored as the value AT approval, but is always reproducible
+  // from hours × hourlyRate × multiplier. Stored for payslip stability (arch §3.1).
+  amountUsd    Decimal  @db.Decimal(10, 2)
+  createdAt    DateTime @default(now())
+
+  @@index([employeeId, date])
+  @@index([date])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Payroll — periods, runs, immutable payslips (arch §3.1)
+// ─────────────────────────────────────────────────────────────
+
+model PayPeriod {
+  id        Int       @id @default(autoincrement())
+  // Semi-monthly: e.g. 2026-06 second half
+  year      Int
+  month     Int                            // 1–12
+  half      Int                            // 1 = days 1–15, 2 = days 16–end
+  startDate DateTime  @db.Date
+  endDate   DateTime  @db.Date
+  workingDays Int                          // scheduled working days in window (6-day week minus holidays)
+  locked    Boolean   @default(false)      // once true, payslips immutable
+  createdAt DateTime  @default(now())
+
+  runs      PayrollRun[]
+  payslips  Payslip[]
+
+  @@unique([year, month, half])
+}
+
+model PayrollRun {
+  id           BigInt    @id @default(autoincrement())
+  periodId     Int
+  period       PayPeriod @relation(fields: [periodId], references: [id])
+  exchangeRate Decimal   @db.Decimal(10, 2) @default(4100.00) // KHR per USD at run time
+  createdById  String
+  createdBy    User      @relation("RunCreatedBy", fields: [createdById], references: [id])
+  createdAt    DateTime  @default(now())
+
+  payslips     Payslip[]
+
+  @@index([periodId])
+}
+
+// A Payslip is a SNAPSHOT. Numbers are frozen at generation (arch §3.1).
+model Payslip {
+  id            BigInt    @id @default(autoincrement())
+  periodId      Int
+  period        PayPeriod @relation(fields: [periodId], references: [id])
+  runId         BigInt
+  run           PayrollRun @relation(fields: [runId], references: [id])
+  employeeId    Int
+  employee      Employee  @relation(fields: [employeeId], references: [id])
+
+  // Frozen inputs
+  daysWorked    Decimal   @db.Decimal(5, 2)
+  dailyRateUsd  Decimal   @db.Decimal(10, 2)
+  overtimeHours Decimal   @db.Decimal(6, 2)
+  overtimeUsd   Decimal   @db.Decimal(10, 2)
+  bonusUsd      Decimal   @db.Decimal(10, 2) @default(0)
+  deductionUsd  Decimal   @db.Decimal(10, 2) @default(0)
+
+  // Frozen outputs
+  baseUsd       Decimal   @db.Decimal(10, 2)   // dailyRate × daysWorked
+  grossUsd      Decimal   @db.Decimal(10, 2)   // base + OT + bonus
+  netUsd        Decimal   @db.Decimal(10, 2)   // gross − deduction
+  exchangeRate  Decimal   @db.Decimal(10, 2)
+  netKhr        Decimal   @db.Decimal(14, 0)   // net × rate, display currency
+
+  // Full reproducible breakdown (line items, rates used) for audit + reprint
+  breakdown     Json
+
+  finalized     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  @@unique([periodId, employeeId])           // one payslip per person per period
+  @@index([employeeId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Settings & calendar (product §6 — holidays are data, not hardcode)
+// ─────────────────────────────────────────────────────────────
+
+model PublicHoliday {
+  id      Int      @id @default(autoincrement())
+  date    DateTime @db.Date @unique
+  name    String                            // English
+  nameKh  String?                           // Khmer
+  paid    Boolean  @default(true)
+
+  @@index([date])
+}
+
+model Setting {
+  key       String   @id                    // e.g. "exchange_rate", "ot_band_night_mult"
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────
+// Audit (product story: every change attributable) (arch §4)
+// ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String                          // "employee.create", "payslip.lock", …
+  entityType String                          // "Employee", "Payslip", …
+  entityId   String
+  before     Json?
+  after      Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}

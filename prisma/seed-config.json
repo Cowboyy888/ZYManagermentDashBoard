@@ -1,0 +1,1 @@
+{ "note": "seed.ts requires: npm i -D ts-node @types/node && npm i @node-rs/argon2", "prisma": { "seed": "ts-node prisma/seed.ts" } }
