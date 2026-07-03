@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { EmployeeForm } from "@/components/forms/EmployeeForm";
 import { updateEmployeePhoto } from "@/actions/employees";
@@ -154,9 +155,16 @@ export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, d
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {emp.photoUrl ? (
-              <img src={emp.photoUrl} alt={emp.nameEn} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <Image
+                src={emp.photoUrl}
+                alt={emp.nameEn}
+                width={100}
+                height={100}
+                priority
+                style={{ objectFit: "cover", display: "block" }}
+              />
             ) : (
-              <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
+              <svg aria-hidden="true" width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
                 <circle cx="12" cy="8" r="3"/><path d="M20 21a8 8 0 0 0-16 0"/>
               </svg>
             )}
@@ -212,10 +220,25 @@ export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, d
               </div>
             </div>
 
-            {/* QR code */}
+            {/* QR code + card link */}
             <div style={{ textAlign: "center" }}>
               <QRCodeSVG value={qrValue} size={80} level="M" />
               <p style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Employee QR</p>
+              <a
+                href={`/employees/${emp.id}/card`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-block",
+                  marginTop: 6,
+                  fontSize: 11,
+                  color: "var(--steel)",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Print ID Card →
+              </a>
             </div>
           </div>
 

@@ -3,9 +3,11 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "../lib/db";
 import { guard } from "../lib/auth/session";
 import { writeAudit } from "../lib/audit";
+import { notifyRole } from "../lib/notify";
 
 const EmergencyContactSchema = z.object({
   name: z.string().max(100).optional(),
@@ -165,6 +167,11 @@ export async function createEmployee(raw: unknown): Promise<ActionResult<{ id: n
     }
     await writeAudit({ userId: actor.id, action: "employee.create", entityType: "Employee", entityId: emp.id, after: emp });
     revalidatePath("/employees");
+    void notifyRole(["OWNER", "HR_MANAGER"], {
+      title: `New employee added: ${d.nameEn}`,
+      body: `${d.nameEn} (${d.employeeCode ?? "EMP-" + String(emp.id).padStart(3, "0")}) has been added to HR.`,
+      level: "info", module: "hr", href: `/employees/${emp.id}`,
+    }, { excludeUserId: actor.id }).catch(console.error);
     return { ok: true, data: { id: emp.id } };
   } catch (e) { return { ok: false, error: errMsg(e) }; }
 }
@@ -247,6 +254,54 @@ export async function deactivateEmployee(id: number): Promise<ActionResult> {
   } catch (e) { return { ok: false, error: errMsg(e) }; }
 }
 
+// ── Get for edit form (lean — no relations, dates serialized) ────────────────
+
+export type EmployeeEditData = {
+  id: number;
+  nameKh: string; nameZh: string | null; nameEn: string;
+  employeeCode: string | null; photoUrl: string | null;
+  gender: string | null; birthday: string | null;
+  nationality: string | null; phone: string | null;
+  email: string | null; address: string | null;
+  emergencyContact: { name?: string; phone?: string; relation?: string } | null;
+  positionId: number | null; factoryAreaId: number | null;
+  productionLine: string | null; shift: string | null; supervisorId: number | null;
+  departmentId: number | null; dailyRateUsd: number;
+  hireDate: string; contractExpiry: string | null; probationEnd: string | null;
+  status: string; note: string | null;
+};
+
+export async function getEmployeeForEdit(id: number): Promise<ActionResult<EmployeeEditData>> {
+  try {
+    await guard("employee.read");
+    const emp = await prisma.employee.findUnique({
+      where: { id },
+      select: {
+        id: true, nameKh: true, nameZh: true, nameEn: true,
+        employeeCode: true, photoUrl: true, gender: true, birthday: true,
+        nationality: true, phone: true, email: true, address: true,
+        emergencyContact: true, positionId: true, factoryAreaId: true,
+        productionLine: true, shift: true, supervisorId: true,
+        departmentId: true, dailyRateUsd: true, hireDate: true,
+        contractExpiry: true, probationEnd: true, status: true, note: true,
+      },
+    });
+    if (!emp) return { ok: false, error: "Employee not found" };
+    return {
+      ok: true,
+      data: {
+        ...emp,
+        dailyRateUsd: Number(emp.dailyRateUsd),
+        birthday: emp.birthday ? emp.birthday.toISOString() : null,
+        hireDate: emp.hireDate.toISOString(),
+        contractExpiry: emp.contractExpiry ? emp.contractExpiry.toISOString() : null,
+        probationEnd: emp.probationEnd ? emp.probationEnd.toISOString() : null,
+        emergencyContact: emp.emergencyContact as { name?: string; phone?: string; relation?: string } | null,
+      },
+    };
+  } catch (e) { return { ok: false, error: errMsg(e) }; }
+}
+
 // ── Search ───────────────────────────────────────────────────────────────────
 
 export async function searchEmployees(q: string): Promise<ActionResult<Array<{
@@ -285,6 +340,7 @@ export async function searchEmployees(q: string): Promise<ActionResult<Array<{
 
 function errMsg(e: unknown): string {
   if (e instanceof Error) {
+    if (e.message === "Not authenticated") redirect("/login");
     if (e.name === "ForbiddenError") return "You do not have permission for this action.";
     return e.message;
   }

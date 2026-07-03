@@ -2,7 +2,9 @@
 // Generated from the real June 16–30 2026 roster (38 employees) + reconstructed OT log.
 // Run: npx prisma db seed
 import { PrismaClient, Role, EmploymentStatus, OvertimeBand } from "@prisma/client";
-import { hash } from "@node-rs/argon2"; // or bcrypt; see auth setup
+// @ts-ignore — @better-auth/utils exports CJS via require condition
+import { hashPassword } from "@better-auth/utils/password";
+import { randomUUID } from "node:crypto";
 
 const prisma = new PrismaClient();
 
@@ -147,12 +149,25 @@ async function main() {
     },
   });
 
-  // Admin user (change the password immediately after first login)
-  await prisma.user.upsert({
+  // Admin user — Better Auth reads Account.password (scrypt), not User.passwordHash.
+  const adminPw = "change-me-on-first-login";
+  const adminUser = await prisma.user.upsert({
     where: { email: "admin@zysteel.local" }, update: {},
     create: {
       email: "admin@zysteel.local", name: "Factory Admin", role: Role.OWNER,
-      passwordHash: await hash("change-me-on-first-login"),
+      emailVerified: true, active: true,
+    },
+  });
+
+  // Recreate the credential Account so Better Auth can verify the password.
+  await prisma.account.deleteMany({ where: { userId: adminUser.id, providerId: "credential" } });
+  await prisma.account.create({
+    data: {
+      id: randomUUID(),
+      accountId: adminUser.id,
+      providerId: "credential",
+      userId: adminUser.id,
+      password: await hashPassword(adminPw),
     },
   });
 

@@ -1,13 +1,25 @@
 import { describe, it, expect } from "vitest";
 import { runPayroll, payrollToCsv } from "../src/lib/payroll/run";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 
-// Load the real roster + the validated OT figures used in Stage 1.
-const roster = JSON.parse(readFileSync("/tmp/payroll.json", "utf8")) as Array<{
-  no: number; name: string; name_kh: string; days: number; ot: number; rate: number; bonus: number;
-}>;
+// The full 38-employee roster fixture is generated from the real June 2026
+// payroll Excel and lives outside the repo (too large + confidential).
+// These tests run only when the fixture is present locally; CI runs without it.
+const FIXTURE_PATH = "/tmp/payroll.json";
+const hasFixture = existsSync(FIXTURE_PATH);
+
+const roster = hasFixture
+  ? (JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as Array<{
+      no: number; name: string; name_kh: string; days: number; ot: number; rate: number; bonus: number;
+    }>)
+  : null;
 
 describe("runPayroll — full roster reconciliation", () => {
+  if (!hasFixture || !roster) {
+    it.skip("fixture /tmp/payroll.json not present — skipping reconciliation tests", () => {});
+    return;
+  }
+
   const inputs = roster.map((e) => ({
     employeeId: e.no, nameEn: e.name, nameKh: e.name_kh,
     dailyRateUsd: e.rate, daysWorked: e.days, overtimeUsd: e.ot, bonusUsd: e.bonus,

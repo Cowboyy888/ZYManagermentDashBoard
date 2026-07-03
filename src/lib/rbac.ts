@@ -12,9 +12,19 @@ export type Action =
   | "leave.read" | "leave.request" | "leave.approve"
   | "payroll.read" | "payroll.run" | "payroll.lock"
   | "report.export"
-  | "audit.read"
   | "settings.read" | "settings.write"
-  | "user.manage";
+  | "user.manage"
+  | "production.read" | "production.write" | "production.manage"
+  | "maintenance.read" | "maintenance.write" | "maintenance.manage"
+  | "inventory.read" | "inventory.write" | "inventory.manage"
+  | "purchasing.read" | "purchasing.write" | "purchasing.approve" | "purchasing.manage"
+  | "sales.read" | "sales.write" | "sales.approve" | "sales.manage"
+  | "quality.read" | "quality.write" | "quality.approve" | "quality.manage"
+  | "finance.read" | "finance.write" | "finance.approve" | "finance.manage"
+  | "bi.read" | "bi.manage"
+  | "notification.read" | "notification.manage"
+  | "audit.view"
+  | "system.health";
 
 // Context for scoped checks. A SUPERVISOR may only act within their own
 // department; actorDeptId is theirs, targetDeptId is the record's.
@@ -46,17 +56,57 @@ const MATRIX: Record<Action, Role[]> = {
   "payroll.lock":     ["OWNER"],
 
   "report.export":    ["OWNER", "HR_MANAGER", "VIEWER"],
-  "audit.read":       ["OWNER", "HR_MANAGER"],
 
   "settings.read":    ["OWNER", "HR_MANAGER"],
   "settings.write":   ["OWNER"],
 
   "user.manage":      ["OWNER"],
+
+  "production.read":   ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "production.write":  ["OWNER", "HR_MANAGER", "SUPERVISOR"],
+  "production.manage": ["OWNER", "HR_MANAGER"],
+  "maintenance.read":   ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "maintenance.write":  ["OWNER", "HR_MANAGER", "SUPERVISOR"],
+  "maintenance.manage": ["OWNER", "HR_MANAGER"],
+
+  "inventory.read":    ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "inventory.write":   ["OWNER", "HR_MANAGER", "SUPERVISOR"],
+  "inventory.manage":  ["OWNER", "HR_MANAGER"],
+
+  "purchasing.read":    ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "purchasing.write":   ["OWNER", "HR_MANAGER", "SUPERVISOR"],
+  "purchasing.approve": ["OWNER", "HR_MANAGER"],
+  "purchasing.manage":  ["OWNER", "HR_MANAGER"],
+
+  "sales.read":    ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "sales.write":   ["OWNER", "HR_MANAGER", "SUPERVISOR"],
+  "sales.approve": ["OWNER", "HR_MANAGER"],
+  "sales.manage":  ["OWNER", "HR_MANAGER"],
+
+  "quality.read":    ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "quality.write":   ["OWNER", "HR_MANAGER", "SUPERVISOR"],
+  "quality.approve": ["OWNER", "HR_MANAGER"],
+  "quality.manage":  ["OWNER", "HR_MANAGER"],
+
+  "finance.read":    ["OWNER", "HR_MANAGER", "VIEWER"],
+  "finance.write":   ["OWNER", "HR_MANAGER"],
+  "finance.approve": ["OWNER", "HR_MANAGER"],
+  "finance.manage":  ["OWNER"],
+
+  "bi.read":   ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "bi.manage": ["OWNER", "HR_MANAGER"],
+
+  "notification.read":   ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "notification.manage": ["OWNER", "HR_MANAGER"],
+
+  "audit.view":    ["OWNER", "HR_MANAGER"],
+  "system.health": ["OWNER"],
 };
 
 // Actions where a SUPERVISOR is confined to their own department.
 const DEPT_SCOPED: Set<Action> = new Set([
   "attendance.write", "overtime.create", "leave.request",
+  "production.write", "maintenance.write", "maintenance.manage",
 ]);
 
 /**

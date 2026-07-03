@@ -1,10 +1,16 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Validate: only accept relative paths to prevent open-redirect attacks.
+  const raw = searchParams.get("callbackUrl") ?? "/";
+  const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +25,7 @@ export default function LoginPage() {
     if (error) {
       setError(error.message ?? "Invalid credentials");
     } else {
-      router.replace("/");
+      router.replace(callbackUrl);
       router.refresh();
     }
   }
@@ -31,29 +37,43 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Zysteel HR</h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
+              id="login-email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="admin@zysteel.local"
+              aria-describedby={error ? "login-error" : undefined}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
             <input
+              id="login-password"
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby={error ? "login-error" : undefined}
             />
           </div>
-          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {error && (
+            <p id="login-error" className="text-sm text-rose-600" role="alert">
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -64,5 +84,15 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Suspense is required by Next.js 15 whenever useSearchParams() is used
+// in a component that is not already wrapped at the page boundary.
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

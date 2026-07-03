@@ -29,6 +29,57 @@
     --brand: #DC2626;
   }
 
+  /* Dark mode — activated by data-theme="dark" on <html> or via OS preference */
+  [data-theme="dark"] {
+    --bg: #111110;
+    --surface: #1c1c1a;
+    --surface-2: #252523;
+    --border: #333330;
+    --text: #ededeb;
+    --text-2: #9a9a94;
+    --text-3: #6b6b66;
+    --steel: #5a91bb;
+    --steel-2: #6aa8d4;
+    --steel-light: #1a2e3d;
+    --accent: #22c48b;
+    --green: #22c48b;
+    --green-bg: #0c2b1e;
+    --amber: #d4890f;
+    --amber-bg: #2b1e08;
+    --red: #d64040;
+    --red-bg: #2b0f0f;
+    --blue: #4a9fe0;
+    --blue-bg: #0d1f35;
+    --purple: #7b71e8;
+    --purple-bg: #15133a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --surface-2: #252523;
+      --border: #333330;
+      --text: #ededeb;
+      --text-2: #9a9a94;
+      --text-3: #6b6b66;
+      --steel: #5a91bb;
+      --steel-2: #6aa8d4;
+      --steel-light: #1a2e3d;
+      --accent: #22c48b;
+      --green: #22c48b;
+      --green-bg: #0c2b1e;
+      --amber: #d4890f;
+      --amber-bg: #2b1e08;
+      --red: #d64040;
+      --red-bg: #2b0f0f;
+      --blue: #4a9fe0;
+      --blue-bg: #0d1f35;
+      --purple: #7b71e8;
+      --purple-bg: #15133a;
+    }
+  }
+
   * { box-sizing: border-box; }
 
   body {
@@ -185,6 +236,39 @@
   }
   .form-select:focus { outline: none; border-color: var(--steel); }
 
+  /* ── Accessibility ── */
+
+  /* Skip navigation — visually hidden until focused via keyboard */
+  .skip-nav {
+    position: absolute;
+    top: -100%;
+    left: 16px;
+    z-index: 9999;
+    padding: 10px 20px;
+    background: var(--steel);
+    color: #fff;
+    border-radius: 0 0 8px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: top 0.15s;
+  }
+  .skip-nav:focus { top: 0; outline: none; }
+
+  /* Global keyboard focus ring — visible on Tab, suppressed on click */
+  :focus-visible {
+    outline: 2px solid var(--steel);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  /* Override for inputs/selects: use box-shadow to stay inside the border */
+  .form-input:focus-visible,
+  .form-select:focus-visible {
+    outline: none;
+    border-color: var(--steel);
+    box-shadow: 0 0 0 3px rgba(45, 74, 99, 0.15);
+  }
+
   /* Page fade-in */
   .page-enter {
     animation: pageEnter 0.2s ease;
@@ -196,6 +280,33 @@
 
   /* Num column */
   .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Button disabled state */
+  .btn:disabled, .btn[disabled] { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+
+  /* Spinner */
+  @keyframes spin-btn { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin-btn 0.65s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* Skeleton shimmer */
+  @keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+    border-radius: 4px;
+  }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }

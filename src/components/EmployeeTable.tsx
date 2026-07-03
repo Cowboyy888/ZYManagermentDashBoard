@@ -3,8 +3,9 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel,
-  flexRender, type ColumnDef, type SortingState,
+  getPaginationRowModel, flexRender, type ColumnDef, type SortingState,
 } from "@tanstack/react-table";
+import { Avatar } from "@/components/Avatar";
 
 export interface EmployeeRow {
   id: number;
@@ -14,7 +15,9 @@ export interface EmployeeRow {
   employeeCode: string | null;
   photoUrl: string | null;
   dailyRateUsd: number;
-  department: { name: string } | null;
+  hireDate: string;
+  departmentId: number | null;
+  department: { id?: number; name: string } | null;
   position: { name: string } | null;
   factoryArea: { name: string; code: string } | null;
   shift: string | null;
@@ -26,26 +29,6 @@ interface Props {
   canEdit: boolean;
   onEdit?: (e: EmployeeRow) => void;
   onDeactivate?: (id: number) => void;
-}
-
-function Avatar({ photoUrl, name }: { photoUrl: string | null; name: string }) {
-  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-  if (photoUrl) {
-    return (
-      <img src={photoUrl} alt={name}
-        style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
-    );
-  }
-  return (
-    <div style={{
-      width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-      background: "var(--steel-light)", color: "var(--steel)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 11, fontWeight: 700,
-    }}>
-      {initials}
-    </div>
-  );
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -62,8 +45,15 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: "id", desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "nameEn", desc: false }]);
   const [filter, setFilter] = useState("");
 
   const columns = useMemo<ColumnDef<EmployeeRow>[]>(() => [
@@ -76,11 +66,12 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
       ),
     },
     {
-      id: "name", header: "Employee",
+      id: "nameEn", header: "Employee",
       accessorFn: r => `${r.nameEn} ${r.nameKh} ${r.nameZh ?? ""} ${r.employeeCode ?? ""}`,
+      sortingFn: (a, b) => a.original.nameEn.localeCompare(b.original.nameEn),
       cell: ({ row: { original: e } }) => (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar photoUrl={e.photoUrl} name={e.nameEn} />
+          <Avatar photoUrl={e.photoUrl} name={e.nameEn} size={32} radius={8} />
           <div>
             <Link href={`/employees/${e.id}`}
               style={{ fontWeight: 600, fontSize: 13, color: "var(--text)", textDecoration: "none" }}
@@ -88,15 +79,16 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
               {e.nameEn}
             </Link>
             <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 1 }}>
-              {e.nameKh}{e.nameZh ? ` · ${e.nameZh}` : ""} {e.employeeCode ? `· ${e.employeeCode}` : ""}
+              {e.nameKh}{e.nameZh ? ` · ${e.nameZh}` : ""}{e.employeeCode ? ` · ${e.employeeCode}` : ""}
             </div>
           </div>
         </div>
       ),
     },
     {
-      id: "dept", header: "Dept / Position",
+      id: "department", header: "Dept / Position",
       accessorFn: r => `${r.department?.name ?? ""} ${r.position?.name ?? ""}`,
+      sortingFn: (a, b) => (a.original.department?.name ?? "").localeCompare(b.original.department?.name ?? ""),
       cell: ({ row: { original: e } }) => (
         <div>
           <div style={{ fontSize: 13 }}>{e.department?.name ?? "—"}</div>
@@ -123,6 +115,15 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
       ),
     },
     {
+      accessorKey: "hireDate", header: "Hire Date",
+      sortingFn: "alphanumeric",
+      cell: ({ getValue }) => (
+        <span style={{ fontSize: 12, color: "var(--text-2)", whiteSpace: "nowrap" }}>
+          {fmtDate(getValue() as string)}
+        </span>
+      ),
+    },
+    {
       accessorKey: "dailyRateUsd", header: "Rate/Day",
       cell: ({ getValue }) => (
         <span style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
@@ -136,8 +137,9 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
     },
     {
       id: "actions", header: "",
+      enableSorting: false,
       cell: ({ row: { original: e } }) => (
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, whiteSpace: "nowrap" }}>
           <Link href={`/employees/${e.id}`}
             style={{ fontSize: 12, color: "var(--steel)", textDecoration: "none" }}>
             View
@@ -169,7 +171,14 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageIndex: 0, pageSize: 25 } },
   });
+
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const filteredCount = table.getFilteredRowModel().rows.length;
+  const start = pageIndex * pageSize + 1;
+  const end = Math.min((pageIndex + 1) * pageSize, filteredCount);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -178,13 +187,14 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
         onChange={e => setFilter(e.target.value)}
         placeholder="Search by name, code, department… (English / ខ្មែរ / 中文)"
         style={{
-          width: "100%", maxWidth: 380, padding: "8px 12px",
+          width: "100%", maxWidth: 420, padding: "8px 12px",
           border: "1px solid var(--border)", borderRadius: 8,
           fontSize: 13, background: "var(--surface)", color: "var(--text)",
         }}
         aria-label="Search employees"
       />
-      {data.length === 0 ? (
+
+      {filteredCount === 0 ? (
         <div style={{
           borderRadius: 10, border: "1.5px dashed var(--border)",
           padding: "40px 24px", textAlign: "center",
@@ -200,12 +210,13 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
                 {table.getHeaderGroups()[0].headers.map(h => (
                   <th
                     key={h.id}
-                    onClick={h.column.getToggleSortingHandler()}
+                    onClick={h.column.getCanSort() ? h.column.getToggleSortingHandler() : undefined}
                     style={{
                       padding: "9px 12px", textAlign: "left",
                       fontWeight: 600, fontSize: 11,
                       textTransform: "uppercase", letterSpacing: "0.04em",
-                      color: "var(--text-3)", cursor: "pointer",
+                      color: "var(--text-3)",
+                      cursor: h.column.getCanSort() ? "pointer" : "default",
                       userSelect: "none", whiteSpace: "nowrap",
                       borderBottom: "1px solid var(--border)",
                     }}
@@ -230,9 +241,51 @@ export function EmployeeTable({ data, canEdit, onEdit, onDeactivate }: Props) {
           </table>
         </div>
       )}
-      <p style={{ fontSize: 12, color: "var(--text-3)" }}>
-        {table.getRowModel().rows.length} of {data.length} employees
-      </p>
+
+      {/* Pagination controls */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: "var(--text-3)" }}>Rows per page:</span>
+          <select
+            value={pageSize}
+            onChange={e => table.setPageSize(Number(e.target.value))}
+            style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid var(--border)", fontSize: 12, background: "var(--surface)" }}
+          >
+            {[10, 25, 50].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+            {filteredCount > 0 ? `${start}–${end} of ${filteredCount}` : "0 results"}
+            {filteredCount !== data.length && ` (${data.length} total)`}
+          </span>
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            style={{
+              padding: "4px 12px", borderRadius: 6, border: "1px solid var(--border)",
+              background: "var(--surface)", fontSize: 12, cursor: table.getCanPreviousPage() ? "pointer" : "not-allowed",
+              opacity: table.getCanPreviousPage() ? 1 : 0.4,
+            }}
+          >
+            ‹ Prev
+          </button>
+          <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+            Page {pageIndex + 1} / {table.getPageCount()}
+          </span>
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            style={{
+              padding: "4px 12px", borderRadius: 6, border: "1px solid var(--border)",
+              background: "var(--surface)", fontSize: 12, cursor: table.getCanNextPage() ? "pointer" : "not-allowed",
+              opacity: table.getCanNextPage() ? 1 : 0.4,
+            }}
+          >
+            Next ›
+          </button>
+        </div>
+      </div>
 
       <style jsx>{`
         .table-row-hover:hover { background: var(--surface-2); }

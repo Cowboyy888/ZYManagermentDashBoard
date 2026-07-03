@@ -75,77 +75,78 @@ export function OvertimeManager({ employees, initial, canCreate }: Props) {
   const totalUsd = entries.reduce((a, e) => a + e.amountUsd, 0);
 
   return (
-    <div className="space-y-4">
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <p className="text-xs text-gray-500">Total entries</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{entries.length}</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* KPI summary */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+        <div className="kpi-card">
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>Total entries</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)", marginTop: 4 }}>{entries.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <p className="text-xs text-gray-500">Total OT pay</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{fmtUsd(totalUsd)}</p>
+        <div className="kpi-card">
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>Total OT pay</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)", marginTop: 4 }}>{fmtUsd(totalUsd)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <p className="text-xs text-gray-500">Employees with OT</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{new Set(entries.map((e) => e.employeeId)).size}</p>
+        <div className="kpi-card">
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>Employees with OT</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text)", marginTop: 4 }}>
+            {new Set(entries.map((e) => e.employeeId)).size}
+          </p>
         </div>
       </div>
 
       {/* Add form */}
       {canCreate && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }}>
           {!showForm ? (
-            <button onClick={() => setShowForm(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            <button onClick={() => setShowForm(true)} className="btn btn-primary">
               + Log overtime
             </button>
           ) : (
-            <div className="space-y-4">
-              <h2 className="text-sm font-semibold text-gray-900">New overtime entry</h2>
-              {error && <p className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <label className="space-y-1">
-                  <span className="block text-xs font-medium text-gray-600">Employee *</span>
-                  <select value={form.employeeId} onChange={set("employeeId")} required
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", margin: 0 }}>New overtime entry</h2>
+              {error && (
+                <p style={{ background: "var(--red-bg)", color: "var(--red)", borderRadius: 6, padding: "8px 12px", fontSize: 13, margin: 0 }}>
+                  {error}
+                </p>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Employee *</span>
+                  <select value={form.employeeId} onChange={set("employeeId")} required className="form-select">
                     <option value="">— Select —</option>
                     {employees.map((e) => <option key={e.id} value={e.id}>{e.nameEn}</option>)}
                   </select>
                 </label>
-                <label className="space-y-1">
-                  <span className="block text-xs font-medium text-gray-600">Date *</span>
-                  <input type="date" value={form.date} onChange={set("date")}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Date *</span>
+                  <input type="date" value={form.date} onChange={set("date")} className="form-input" />
                 </label>
-                <label className="space-y-1">
-                  <span className="block text-xs font-medium text-gray-600">Hours *</span>
-                  <input type="number" step="0.5" min="0.5" max="12" value={form.hours} onChange={set("hours")} placeholder="e.g. 1.5"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Hours *</span>
+                  <input type="number" step="0.5" min="0.5" max="12" value={form.hours} onChange={set("hours")}
+                    placeholder="e.g. 1.5" className="form-input" />
                 </label>
-                <label className="space-y-1">
-                  <span className="block text-xs font-medium text-gray-600">Band *</span>
-                  <select value={form.band} onChange={set("band")}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Band *</span>
+                  <select value={form.band} onChange={set("band")} className="form-select">
                     {(Object.keys(BAND_LABEL) as OTBand[]).map((b) => (
                       <option key={b} value={b}>{BAND_LABEL[b]}</option>
                     ))}
                   </select>
                 </label>
-                <label className="space-y-1 sm:col-span-2">
-                  <span className="block text-xs font-medium text-gray-600">Description</span>
-                  <input type="text" value={form.description} onChange={set("description")} placeholder="e.g. 安排出货"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label style={{ display: "flex", flexDirection: "column", gap: 4, gridColumn: "span 2" }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Description</span>
+                  <input type="text" value={form.description} onChange={set("description")}
+                    placeholder="e.g. 安排出货" className="form-input" />
                 </label>
               </div>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => { setShowForm(false); setError(null); }}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button onClick={() => { setShowForm(false); setError(null); }} className="btn">
                   Cancel
                 </button>
                 <button onClick={submit} disabled={isPending || !form.employeeId || !form.hours}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 hover:bg-blue-700">
-                  {isPending ? "Saving…" : "Save OT"}
+                  className="btn btn-primary">
+                  {isPending ? <><span className="spinner" />Saving…</> : "Save OT"}
                 </button>
               </div>
             </div>
@@ -154,42 +155,46 @@ export function OvertimeManager({ employees, initial, canCreate }: Props) {
       )}
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-100 bg-gray-50">
+      <div className="panel">
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Employee</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Band</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Hours</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Description</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Band</th>
+                <th style={{ textAlign: "right" }}>Hours</th>
+                <th style={{ textAlign: "right" }}>Amount</th>
+                <th>Description</th>
+                <th>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {entries.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">No overtime logged yet.</td></tr>
-              ) : entries.map((e) => (
-                <tr key={e.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium text-gray-800">{e.employeeName}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{new Date(e.date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2.5 text-gray-500 text-xs">{e.band.replace(/_/g, " ")}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-800">{e.hours}h</td>
-                  <td className="px-4 py-2.5 text-right font-medium text-gray-900">{fmtUsd(e.amountUsd)}</td>
-                  <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate">{e.description ?? "—"}</td>
-                  <td className="px-4 py-2.5">
-                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{e.status}</span>
+                <tr>
+                  <td colSpan={7} style={{ padding: "32px 16px", textAlign: "center", color: "var(--text-3)" }}>
+                    No overtime logged yet.
                   </td>
+                </tr>
+              ) : entries.map((e) => (
+                <tr key={e.id}>
+                  <td style={{ fontWeight: 500 }}>{e.employeeName}</td>
+                  <td style={{ color: "var(--text-2)" }}>{new Date(e.date).toLocaleDateString()}</td>
+                  <td style={{ color: "var(--text-2)", fontSize: 12 }}>{e.band.replace(/_/g, " ")}</td>
+                  <td className="num">{e.hours}h</td>
+                  <td className="num" style={{ fontWeight: 600 }}>{fmtUsd(e.amountUsd)}</td>
+                  <td style={{ color: "var(--text-2)", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {e.description ?? "—"}
+                  </td>
+                  <td><span className="tag tag-green">{e.status}</span></td>
                 </tr>
               ))}
             </tbody>
             {entries.length > 0 && (
-              <tfoot className="border-t border-gray-200 bg-gray-50">
+              <tfoot>
                 <tr>
-                  <td colSpan={4} className="px-4 py-2.5 text-sm font-medium text-gray-900">Total</td>
-                  <td className="px-4 py-2.5 text-right text-sm font-bold text-gray-900">{fmtUsd(totalUsd)}</td>
+                  <td colSpan={4}>Total</td>
+                  <td className="num">{fmtUsd(totalUsd)}</td>
                   <td colSpan={2} />
                 </tr>
               </tfoot>

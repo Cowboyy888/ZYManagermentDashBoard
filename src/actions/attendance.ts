@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "../lib/db";
 import { guard } from "../lib/auth/session";
 import { writeAudit } from "../lib/audit";
@@ -144,8 +145,87 @@ export async function createOvertime(raw: unknown): Promise<ActionResult<{ id: s
   }
 }
 
+// ── Rich attendance fetch (includes dept / position / photo for summary views) ──
+
+export type AttendanceDayFull = {
+  id: string;
+  employeeId: number;
+  employee: {
+    id: number; nameEn: string; nameKh: string; nameZh: string | null;
+    photoUrl: string | null; departmentId: number | null; positionId: number | null;
+  };
+  date: string;  // "YYYY-MM-DD"
+  am: "PRESENT" | "LEAVE" | "ABSENT";
+  pm: "PRESENT" | "LEAVE" | "ABSENT";
+  leaveType: string | null;
+  note: string | null;
+};
+
+export async function getAttendancePeriodFull(params: {
+  startDate: Date; endDate: Date; departmentId?: number;
+}): Promise<ActionResult<AttendanceDayFull[]>> {
+  try {
+    await guard("attendance.read");
+    const rows = await prisma.attendanceDay.findMany({
+      where: {
+        date: { gte: params.startDate, lte: params.endDate },
+        ...(params.departmentId ? { employee: { departmentId: params.departmentId } } : {}),
+      },
+      include: {
+        employee: {
+          select: {
+            id: true, nameEn: true, nameKh: true, nameZh: true,
+            photoUrl: true, departmentId: true, positionId: true,
+          },
+        },
+      },
+      orderBy: [{ employeeId: "asc" }, { date: "asc" }],
+    });
+    return {
+      ok: true,
+      data: rows.map(r => ({
+        id: r.id.toString(),
+        employeeId: r.employeeId,
+        employee: {
+          id: r.employee.id,
+          nameEn: r.employee.nameEn,
+          nameKh: r.employee.nameKh,
+          nameZh: r.employee.nameZh,
+          photoUrl: r.employee.photoUrl,
+          departmentId: r.employee.departmentId,
+          positionId: r.employee.positionId,
+        },
+        date: new Date(r.date).toISOString().slice(0, 10),
+        am: r.am,
+        pm: r.pm,
+        leaveType: r.leaveType ?? null,
+        note: r.note ?? null,
+      })),
+    };
+  } catch (e) { return { ok: false, error: errMsg(e) }; }
+}
+
+export async function deleteAttendanceRecord(id: string): Promise<ActionResult> {
+  try {
+    const actor = await guard("attendance.write");
+    const record = await prisma.attendanceDay.findUnique({
+      where: { id: BigInt(id) },
+      include: { employee: { select: { departmentId: true } } },
+    });
+    if (!record) return { ok: false, error: "Record not found." };
+    if (actor.role === "SUPERVISOR") {
+      await guard("attendance.write", { targetDeptId: record.employee.departmentId });
+    }
+    await prisma.attendanceDay.delete({ where: { id: BigInt(id) } });
+    await writeAudit({ userId: actor.id, action: "attendance.delete", entityType: "AttendanceDay", entityId: id });
+    revalidatePath("/attendance");
+    return { ok: true, data: undefined };
+  } catch (e) { return { ok: false, error: errMsg(e) }; }
+}
+
 function errMsg(e: unknown): string {
   if (e instanceof Error) {
+    if (e.message === "Not authenticated") redirect("/login");
     if (e.name === "ForbiddenError") return "You do not have permission for this action.";
     return e.message;
   }

@@ -20,10 +20,10 @@ export default async function OvertimePage() {
   ]);
 
   return (
-    <div className="p-6 space-y-4">
+    <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Overtime</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Log and review overtime incidents</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", margin: 0 }}>Overtime</h1>
+        <p style={{ fontSize: 13, color: "var(--text-3)", marginTop: 4 }}>Log and review overtime incidents</p>
       </div>
       <OvertimeManager
         employees={employees}

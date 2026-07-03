@@ -11,16 +11,18 @@ const nextConfig = {
   compress: true,
 
   // Image optimisation pipeline (formats + caching).
-  // The app currently uses <img> tags; this config future-proofs migration to <Image>.
-  // Local photos at /public/uploads/ are same-origin — no remotePatterns needed.
+  // Photos are now served from Vercel Blob CDN (*.public.blob.vercel-storage.com).
   images: {
-    // Serve AVIF first (smaller), fall back to WebP, then original.
     formats: ["image/avif", "image/webp"],
-    // Responsive breakpoints matching common viewport widths.
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    // Cache optimised images for 7 days on the CDN / browser.
     minimumCacheTTL: 60 * 60 * 24 * 7,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+    ],
   },
 
   experimental: {
@@ -31,8 +33,9 @@ const nextConfig = {
 
   // Keep native-binary packages outside the Next.js server bundle.
   // Prisma generates a .node query engine; @node-rs/argon2 is a Rust binary.
-  // Bundling either causes "cannot find module" errors in the output directory.
-  serverExternalPackages: ["@prisma/client", "@node-rs/argon2"],
+  // sharp is used in the photo upload route — Vercel installs it for image optimization
+  // so we reference the same binary rather than bundling a duplicate copy.
+  serverExternalPackages: ["@prisma/client", "@node-rs/argon2", "sharp"],
 
   // Explicit no-ignore policy — fail the build on type errors and lint violations.
   // Both fields default to false (ignore), so this documents intent and prevents
@@ -110,7 +113,8 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' blob: data:",
+      // *.public.blob.vercel-storage.com — Vercel Blob CDN for employee photos & documents
+      "img-src 'self' blob: data: https://*.public.blob.vercel-storage.com",
       "font-src 'self'",
       "connect-src 'self' https://challenges.cloudflare.com",
       "frame-src 'self' https://challenges.cloudflare.com",

@@ -7,7 +7,8 @@ import { EmployeeManager } from "./EmployeeManager";
 export default async function EmployeesPage() {
   const user = await requireUser();
   const [res, departments, positions, factoryAreas, supervisorRaw] = await Promise.all([
-    listEmployees({ status: "ACTIVE" }),
+    // Load all statuses so the client-side filter can switch between Active / All / Terminated
+    listEmployees({ status: "ALL" }),
     prisma.department.findMany({ orderBy: { name: "asc" } }),
     prisma.position.findMany({ orderBy: [{ level: "asc" }, { name: "asc" }] }),
     prisma.factoryArea.findMany({ orderBy: { code: "asc" } }),
@@ -18,7 +19,7 @@ export default async function EmployeesPage() {
     }),
   ]);
 
-  if ('error' in res) return <p style={{ padding: 24, color: "var(--red)" }}>{res.error}</p>;
+  if (!res.ok) return <p style={{ padding: 24, color: "var(--red)" }}>{"error" in res ? res.error : "Failed to load"}</p>;
 
   const rows = res.data.map(e => ({
     id: e.id,
@@ -28,18 +29,24 @@ export default async function EmployeesPage() {
     employeeCode: e.employeeCode,
     photoUrl: e.photoUrl,
     dailyRateUsd: Number(e.dailyRateUsd),
-    department: e.department,
-    position: e.position,
-    factoryArea: e.factoryArea,
+    hireDate: e.hireDate.toISOString(),
+    departmentId: e.departmentId ?? null,
+    department: e.department ? { id: e.department.id, name: e.department.name } : null,
+    position: e.position ? { name: e.position.name } : null,
+    factoryArea: e.factoryArea ? { name: e.factoryArea.name, code: e.factoryArea.code } : null,
     shift: e.shift,
-    status: e.status,
+    status: e.status as "ACTIVE" | "TERMINATED",
   }));
+
+  const activeCount = rows.filter(r => r.status === "ACTIVE").length;
 
   return (
     <div style={{ padding: 24 }}>
       <header style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Employees</h1>
-        <p style={{ fontSize: 13, color: "var(--text-3)" }}>{rows.length} active employees</p>
+        <p style={{ fontSize: 13, color: "var(--text-3)" }}>
+          {activeCount} active · {rows.length} total
+        </p>
       </header>
       <EmployeeManager
         initial={rows}

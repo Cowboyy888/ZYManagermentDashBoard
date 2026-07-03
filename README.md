@@ -81,3 +81,4 @@ The brief asked for everything at once. Building the schema and the validated
 payroll engine *first* is what makes the rest safe to build — a beautiful
 dashboard over wrong numbers is worse than no dashboard. With the foundation
 proven against real data, the UI modules become mechanical.
+# ZYManagermentDashBoard

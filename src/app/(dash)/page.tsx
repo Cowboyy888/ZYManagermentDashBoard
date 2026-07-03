@@ -22,6 +22,9 @@ export default async function DashboardPage() {
     contractExpiring7,
     todayBirthdays,
     attendanceSummary,
+    monthlyAttendanceRate,
+    pendingLeaveCount,
+    onLeaveTodayCount,
     hiringByMonth,
   ] = await Promise.all([
     prisma.employee.count({ where: { status: "ACTIVE" } }),
@@ -31,7 +34,10 @@ export default async function DashboardPage() {
       orderBy: { name: "asc" },
     }),
 
-    prisma.payPeriod.findFirst({ orderBy: [{ year: "desc" }, { month: "desc" }, { half: "desc" }] }),
+    prisma.payPeriod.findFirst({
+      orderBy: [{ year: "desc" }, { month: "desc" }, { half: "desc" }],
+      select: { id: true, year: true, month: true, half: true, locked: true, name: true, payrollDate: true, endDate: true },
+    }),
 
     prisma.overtimeEntry.findMany({
       take: 8,
@@ -69,6 +75,32 @@ export default async function DashboardPage() {
       _count: { am: true },
     }).catch(() => []),
 
+    // Monthly attendance rate (present half-slots / total half-slots)
+    prisma.attendanceDay.findMany({
+      where: { date: { gte: thisMonthStart } },
+      select: { am: true, pm: true },
+    }).then(days => {
+      let present = 0, total = 0;
+      for (const d of days) {
+        total += 2;
+        if (d.am === "PRESENT") present++;
+        if (d.pm === "PRESENT") present++;
+      }
+      return total > 0 ? Math.round((present / total) * 100) : null;
+    }).catch(() => null),
+
+    // Pending leave approvals
+    prisma.leaveRequest.count({ where: { status: "PENDING" } }).catch(() => 0),
+
+    // Employees on approved leave today
+    prisma.leaveRequest.count({
+      where: {
+        status: "APPROVED",
+        startDate: { lte: new Date(todayIso) },
+        endDate:   { gte: new Date(todayIso) },
+      },
+    }).catch(() => 0),
+
     // Hiring trends — last 6 months
     prisma.employee.findMany({
       where: {
@@ -89,13 +121,16 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const periodPayslips = latestPeriod
-    ? await prisma.payslip.aggregate({
-        where: { periodId: latestPeriod.id },
-        _sum: { grossUsd: true, netUsd: true },
-        _count: true,
-      })
-    : null;
+  const [periodPayslips, periodFinalized] = latestPeriod
+    ? await Promise.all([
+        prisma.payslip.aggregate({
+          where: { periodId: latestPeriod.id },
+          _sum: { grossUsd: true, netUsd: true },
+          _count: true,
+        }),
+        prisma.payslip.count({ where: { periodId: latestPeriod.id, finalized: true } }),
+      ])
+    : [null, 0];
 
   // Flatten attendance summary
   const presentToday = attendanceSummary.find(r => r.am === "PRESENT")?._count?.am ?? 0;
@@ -127,11 +162,17 @@ export default async function DashboardPage() {
           employee: { nameEn: o.employee.nameEn, nameKh: o.employee.nameKh },
         }))}
         hiringByMonth={hiringByMonth}
+        monthlyAttendanceRate={monthlyAttendanceRate}
+        pendingLeaveCount={pendingLeaveCount}
+        onLeaveTodayCount={onLeaveTodayCount}
         latestPeriod={latestPeriod ? {
-          label: `${latestPeriod.year}-${String(latestPeriod.month).padStart(2, "0")} H${latestPeriod.half}`,
+          label: latestPeriod.name ?? `${latestPeriod.year}-${String(latestPeriod.month).padStart(2, "0")} ${latestPeriod.half === 1 ? "1st Half" : "2nd Half"}`,
           locked: latestPeriod.locked,
           grossUsd: periodPayslips?._sum?.grossUsd ? Number(periodPayslips._sum.grossUsd) : null,
           count: periodPayslips?._count ?? 0,
+          finalizedCount: periodFinalized,
+          payrollDate: latestPeriod.payrollDate ? latestPeriod.payrollDate.toISOString() : null,
+          periodEndDate: latestPeriod.endDate.toISOString(),
         } : null}
       />
     </div>

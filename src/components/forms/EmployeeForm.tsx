@@ -12,13 +12,13 @@ interface EditingEmployee {
   id: number;
   nameKh: string; nameZh: string | null; nameEn: string;
   employeeCode: string | null; photoUrl: string | null;
-  gender: string | null; birthday: Date | null; nationality: string | null;
+  gender: string | null; birthday: Date | string | null; nationality: string | null;
   phone: string | null; email: string | null; address: string | null;
   emergencyContact: { name?: string; phone?: string; relation?: string } | null;
   positionId: number | null; factoryAreaId: number | null;
   productionLine: string | null; shift: string | null; supervisorId: number | null;
   departmentId: number | null; dailyRateUsd: number;
-  hireDate: string; contractExpiry: Date | null; probationEnd: Date | null;
+  hireDate: Date | string; contractExpiry: Date | string | null; probationEnd: Date | string | null;
   status: string; note: string | null;
 }
 
@@ -39,15 +39,10 @@ function fmt(d: Date | string | null | undefined): string {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "7px 10px",
-  borderRadius: 6,
-  border: "1px solid var(--border)",
-  fontSize: 13,
-  background: "var(--surface)",
-  color: "var(--text)",
-  outline: "none",
-  boxSizing: "border-box",
+  width: "100%", padding: "7px 10px", borderRadius: 6,
+  border: "1px solid var(--border)", fontSize: 13,
+  background: "var(--surface)", color: "var(--text)",
+  outline: "none", boxSizing: "border-box",
 };
 
 const labelStyle: React.CSSProperties = {
@@ -70,20 +65,60 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
+const PHOTO_ACCEPT = ["image/jpeg", "image/png", "image/webp"];
+
 export function EmployeeForm({ departments, positions, factoryAreas, supervisors, editing, onDone }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [photoPreview, setPhotoPreview] = useState<string | null>(editing?.photoUrl ?? null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string | null>(null);
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  function handlePhotoFile(f: File) {
+    if (!PHOTO_ACCEPT.includes(f.type)) {
+      setServerError("Only JPEG, PNG, or WebP images are allowed.");
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      setServerError("Photo must be under 5 MB.");
+      return;
+    }
+    setServerError(null);
     setPhotoFile(f);
     setPhotoPreview(URL.createObjectURL(f));
+    setPhotoRemoved(false);
+  }
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) handlePhotoFile(f);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function handleDragLeave() {
+    setDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (f) handlePhotoFile(f);
+  }
+
+  function handleRemovePhoto() {
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    setPhotoRemoved(true);
+    if (photoInputRef.current) photoInputRef.current.value = "";
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -122,6 +157,8 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
       probationEnd: fd.get("probationEnd") || null,
       status: fd.get("status") ?? "ACTIVE",
       note: fd.get("note") || null,
+      // Clear photo if removed
+      ...(photoRemoved && !photoFile ? { photoUrl: null } : {}),
     };
 
     startTransition(async () => {
@@ -129,14 +166,14 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
 
       if (editing) {
         const res = await updateEmployee(editing.id, payload);
-        if ('error' in res) {
+        if ("error" in res) {
           setServerError(res.error);
           setFieldErrors((res as { ok: false; error: string; fieldErrors?: Record<string, string[]> }).fieldErrors ?? {});
           return;
         }
       } else {
         const res = await createEmployee(payload);
-        if ('error' in res) {
+        if ("error" in res) {
           setServerError(res.error);
           setFieldErrors((res as { ok: false; error: string; fieldErrors?: Record<string, string[]> }).fieldErrors ?? {});
           return;
@@ -153,6 +190,8 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
         if (photoJson.url) {
           await updateEmployeePhoto(empId, photoJson.url);
         }
+      } else if (photoRemoved && empId && editing) {
+        await updateEmployeePhoto(empId, "");
       }
 
       router.refresh();
@@ -182,33 +221,47 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
         </div>
       )}
 
-      {/* Photo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      {/* Photo — drag-and-drop */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
         <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           onClick={() => photoInputRef.current?.click()}
           style={{
-            width: 80, height: 80, borderRadius: 12,
-            background: "var(--surface-2)", border: "2px dashed var(--border)",
+            width: 90, height: 90, borderRadius: 12,
+            background: dragging ? "var(--steel-light)" : "var(--surface-2)",
+            border: `2px ${dragging ? "solid var(--steel)" : "dashed var(--border)"}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", overflow: "hidden", flexShrink: 0,
+            transition: "border-color 0.15s, background 0.15s",
           }}
         >
           {photoPreview ? (
-            <img src={photoPreview} alt="Photo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={photoPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
-              <circle cx="12" cy="8" r="3"/>
-              <path d="M20 21a8 8 0 0 0-16 0"/>
+            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
+              <circle cx="12" cy="8" r="3"/><path d="M20 21a8 8 0 0 0-16 0"/>
             </svg>
           )}
         </div>
-        <div>
+        <div style={{ paddingTop: 4 }}>
           <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Employee Photo</p>
-          <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>JPEG / PNG / WebP, max 5 MB</p>
-          <button type="button" onClick={() => photoInputRef.current?.click()}
-            style={{ marginTop: 6, fontSize: 12, color: "var(--steel)", cursor: "pointer", background: "none", border: "none", padding: 0 }}>
-            {photoPreview ? "Change photo" : "Upload photo"}
-          </button>
+          <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
+            Drag & drop or click · JPEG / PNG / WebP · max 5 MB
+          </p>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <button type="button" onClick={() => photoInputRef.current?.click()}
+              style={{ fontSize: 12, color: "var(--steel)", cursor: "pointer", background: "none", border: "none", padding: 0, fontWeight: 500 }}>
+              {photoPreview ? "Change photo" : "Upload photo"}
+            </button>
+            {photoPreview && (
+              <button type="button" onClick={handleRemovePhoto}
+                style={{ fontSize: 12, color: "var(--red)", cursor: "pointer", background: "none", border: "none", padding: 0 }}>
+                Remove
+              </button>
+            )}
+          </div>
         </div>
         <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp"
           onChange={handlePhotoChange} style={{ display: "none" }} />
@@ -277,7 +330,7 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
         </div>
       </Section>
 
-      {/* Assignment */}
+      {/* Work Assignment */}
       <Section label="Work Assignment">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Field name="departmentId" label="Department">
@@ -323,7 +376,8 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
       <Section label="Employment">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           <Field name="hireDate" label="Hire Date *">
-            <input name="hireDate" type="date" required defaultValue={fmt(editing?.hireDate ?? new Date().toISOString())} style={inputStyle} />
+            <input name="hireDate" type="date" required
+              defaultValue={fmt(editing?.hireDate ?? new Date().toISOString())} style={inputStyle} />
           </Field>
           <Field name="contractExpiry" label="Contract Expiry">
             <input name="contractExpiry" type="date" defaultValue={fmt(editing?.contractExpiry)} style={inputStyle} />

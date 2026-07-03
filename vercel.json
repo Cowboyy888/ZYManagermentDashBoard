@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-report",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/contract-expiry",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/low-stock",
+      "schedule": "30 1 * * *"
+    },
+    {
+      "path": "/api/cron/maintenance-due",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/payroll-reminder",
+      "schedule": "30 2 * * *"
+    }
+  ]
+}

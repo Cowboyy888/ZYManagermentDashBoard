@@ -20,9 +20,15 @@ interface Props {
     employee: { nameEn: string; nameKh: string };
   }[];
   hiringByMonth: { month: string; count: number }[];
+  monthlyAttendanceRate: number | null;
+  pendingLeaveCount: number;
+  onLeaveTodayCount: number;
   latestPeriod: {
     label: string; locked: boolean;
     grossUsd: number | null; count: number;
+    finalizedCount: number;
+    payrollDate: string | null;
+    periodEndDate: string;
   } | null;
 }
 
@@ -92,7 +98,8 @@ function fmt(iso: string): string {
 export function DashboardClient({
   headcount, presentToday, leaveToday, absentToday,
   contractExpiring30, contractExpiring7,
-  todayBirthdays, departments, recentOt, hiringByMonth, latestPeriod,
+  todayBirthdays, departments, recentOt, hiringByMonth,
+  monthlyAttendanceRate, pendingLeaveCount, onLeaveTodayCount, latestPeriod,
 }: Props) {
   const today = new Date();
 
@@ -166,6 +173,25 @@ export function DashboardClient({
           icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>}
         />
         <KpiCard
+          label="Monthly Rate"
+          value={monthlyAttendanceRate !== null ? `${monthlyAttendanceRate}%` : "—"}
+          sub="Attendance this month"
+          accent={monthlyAttendanceRate === null ? "steel" : monthlyAttendanceRate >= 90 ? "green" : monthlyAttendanceRate >= 75 ? "amber" : "red"}
+          icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>}
+        />
+        <KpiCard
+          label="Pending Leave" value={pendingLeaveCount}
+          sub="Awaiting approval"
+          accent={pendingLeaveCount > 0 ? "amber" : "steel"}
+          icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>}
+        />
+        <KpiCard
+          label="On Leave Today" value={onLeaveTodayCount}
+          sub="Approved absence"
+          accent={onLeaveTodayCount > 0 ? "purple" : "steel"}
+          icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+        />
+        <KpiCard
           label="Contracts Expiring" value={contractExpiring30}
           sub="Next 30 days"
           accent={contractExpiring30 > 0 ? "red" : "steel"}
@@ -175,15 +201,51 @@ export function DashboardClient({
           <>
             <KpiCard
               label="Current Period" value={latestPeriod.label}
-              sub={latestPeriod.locked ? "Locked ✓" : "Open"}
+              sub={latestPeriod.locked ? "Closed ✓" : "Open"}
               accent={latestPeriod.locked ? "green" : "amber"}
               icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>}
             />
+            {latestPeriod.payrollDate && (() => {
+              const target = new Date(latestPeriod.payrollDate!); target.setHours(0, 0, 0, 0);
+              const now = new Date(); now.setHours(0, 0, 0, 0);
+              const diff = Math.round((target.getTime() - now.getTime()) / 86400000);
+              const label = diff === 0 ? "Today!" : diff < 0 ? `${Math.abs(diff)}d overdue` : `In ${diff} days`;
+              const accent = diff < 0 ? "red" : diff <= 3 ? "amber" : "steel";
+              return (
+                <KpiCard
+                  label="Payroll Date" value={label}
+                  sub={new Date(latestPeriod.payrollDate!).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  accent={accent}
+                  icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                />
+              );
+            })()}
+            {!latestPeriod.locked && (() => {
+              const end = new Date(latestPeriod.periodEndDate); end.setHours(0, 0, 0, 0);
+              const now = new Date(); now.setHours(0, 0, 0, 0);
+              const days = Math.round((end.getTime() - now.getTime()) / 86400000);
+              return (
+                <KpiCard
+                  label="Period Ends"
+                  value={days < 0 ? "Ended" : days === 0 ? "Today" : `${days} days`}
+                  sub={new Date(latestPeriod.periodEndDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                  accent={days < 0 ? "red" : days <= 2 ? "amber" : "steel"}
+                  icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>}
+                />
+              );
+            })()}
             <KpiCard
               label="Payroll Gross"
               value={latestPeriod.grossUsd != null ? `$${latestPeriod.grossUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
               sub={latestPeriod.count > 0 ? `${latestPeriod.count} payslips` : "Not yet run"}
               accent="steel"
+            />
+            <KpiCard
+              label="Employees Paid"
+              value={latestPeriod.finalizedCount > 0 ? latestPeriod.finalizedCount : latestPeriod.count > 0 ? `${latestPeriod.count} draft` : "—"}
+              sub={latestPeriod.finalizedCount > 0 ? "Finalized payslips" : "Awaiting finalization"}
+              accent={latestPeriod.finalizedCount > 0 ? "green" : latestPeriod.count > 0 ? "amber" : "steel"}
+              icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>}
             />
           </>
         )}

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { Avatar } from "@/components/Avatar";
 
 interface OrgNode {
   id: number;
@@ -17,23 +18,6 @@ interface OrgNode {
 interface Props {
   roots: OrgNode[];
   totalCount: number;
-}
-
-function Avatar({ photoUrl, name }: { photoUrl: string | null; name: string }) {
-  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-  if (photoUrl) {
-    return <img src={photoUrl} alt={name} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} />;
-  }
-  return (
-    <div style={{
-      width: 40, height: 40, borderRadius: 10,
-      background: "var(--steel-light)", color: "var(--steel)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 13, fontWeight: 700,
-    }}>
-      {initials}
-    </div>
-  );
 }
 
 function OrgCard({ node, depth }: { node: OrgNode; depth: number }) {
@@ -57,7 +41,7 @@ function OrgCard({ node, depth }: { node: OrgNode; depth: number }) {
         onClick={hasChildren ? () => setExpanded(v => !v) : undefined}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Avatar photoUrl={node.photoUrl} name={node.nameEn} />
+          <Avatar photoUrl={node.photoUrl} name={node.nameEn} size={40} radius={10} />
           <div style={{ minWidth: 0 }}>
             <Link href={`/employees/${node.id}`}
               onClick={e => e.stopPropagation()}

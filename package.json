@@ -16,16 +16,21 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.109.0",
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.1.0",
     "@tanstack/react-table": "^8.20.5",
+    "@vercel/blob": "^2.5.0",
     "better-auth": "^1.1.0",
     "framer-motion": "^11.15.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "next": "^15.1.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.13.3",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

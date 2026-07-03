@@ -1,6 +1,7 @@
 "use server";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { guard } from "@/lib/auth/session";
 import { writeAudit } from "@/lib/audit";
@@ -53,6 +54,9 @@ export async function deleteFactoryArea(id: number): Promise<ActionResult> {
 }
 
 function errMsg(e: unknown): string {
-  if (e instanceof Error) return e.message;
+  if (e instanceof Error) {
+    if (e.message === "Not authenticated") redirect("/login");
+    return e.message;
+  }
   return "Unexpected error";
 }

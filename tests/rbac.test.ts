@@ -54,3 +54,60 @@ describe("authorize() throwing variant", () => {
     expect(() => authorize("OWNER", "payroll.run")).not.toThrow();
   });
 });
+
+describe("Notification RBAC", () => {
+  it("all roles can read their own notifications", () => {
+    expect(can("OWNER", "notification.read")).toBe(true);
+    expect(can("HR_MANAGER", "notification.read")).toBe(true);
+    expect(can("SUPERVISOR", "notification.read")).toBe(true);
+    expect(can("VIEWER", "notification.read")).toBe(true);
+  });
+  it("only OWNER and HR_MANAGER can manage notifications", () => {
+    expect(can("OWNER", "notification.manage")).toBe(true);
+    expect(can("HR_MANAGER", "notification.manage")).toBe(true);
+    expect(can("SUPERVISOR", "notification.manage")).toBe(false);
+    expect(can("VIEWER", "notification.manage")).toBe(false);
+  });
+});
+
+describe("Admin RBAC", () => {
+  it("OWNER and HR_MANAGER can view audit log", () => {
+    expect(can("OWNER", "audit.view")).toBe(true);
+    expect(can("HR_MANAGER", "audit.view")).toBe(true);
+    expect(can("SUPERVISOR", "audit.view")).toBe(false);
+    expect(can("VIEWER", "audit.view")).toBe(false);
+  });
+  it("only OWNER can view system health", () => {
+    expect(can("OWNER", "system.health")).toBe(true);
+    expect(can("HR_MANAGER", "system.health")).toBe(false);
+    expect(can("SUPERVISOR", "system.health")).toBe(false);
+    expect(can("VIEWER", "system.health")).toBe(false);
+  });
+});
+
+describe("BI RBAC", () => {
+  it("all roles can read BI dashboards", () => {
+    expect(can("OWNER", "bi.read")).toBe(true);
+    expect(can("HR_MANAGER", "bi.read")).toBe(true);
+    expect(can("SUPERVISOR", "bi.read")).toBe(true);
+    expect(can("VIEWER", "bi.read")).toBe(true);
+  });
+  it("only OWNER and HR_MANAGER can manage BI", () => {
+    expect(can("SUPERVISOR", "bi.manage")).toBe(false);
+    expect(can("VIEWER", "bi.manage")).toBe(false);
+  });
+});
+
+describe("Finance RBAC", () => {
+  it("VIEWER can read finance", () => {
+    expect(can("VIEWER", "finance.read")).toBe(true);
+  });
+  it("SUPERVISOR cannot write finance", () => {
+    expect(can("SUPERVISOR", "finance.write")).toBe(false);
+    expect(can("SUPERVISOR", "finance.approve")).toBe(false);
+  });
+  it("only OWNER can manage finance", () => {
+    expect(can("HR_MANAGER", "finance.manage")).toBe(false);
+    expect(can("OWNER", "finance.manage")).toBe(true);
+  });
+});

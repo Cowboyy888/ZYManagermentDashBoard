@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { searchEmployees } from "@/actions/employees";
+import { Avatar } from "@/components/Avatar";
 
 interface Result {
   id: number;
@@ -11,23 +12,6 @@ interface Result {
   photoUrl: string | null;
   department: { name: string } | null;
   position: { name: string } | null;
-}
-
-function Avatar({ photoUrl, name }: { photoUrl: string | null; name: string }) {
-  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-  if (photoUrl) {
-    return <img src={photoUrl} alt={name} style={{ width: 30, height: 30, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />;
-  }
-  return (
-    <div style={{
-      width: 30, height: 30, borderRadius: 6, flexShrink: 0,
-      background: "var(--steel-light)", color: "var(--steel)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 10, fontWeight: 700,
-    }}>
-      {initials}
-    </div>
-  );
 }
 
 export function GlobalSearch() {
@@ -150,7 +134,7 @@ export function GlobalSearch() {
                   }}
                   onMouseEnter={() => setActiveIdx(i)}
                 >
-                  <Avatar photoUrl={r.photoUrl} name={r.nameEn} />
+                  <Avatar photoUrl={r.photoUrl} name={r.nameEn} size={30} radius={6} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {r.nameEn}
