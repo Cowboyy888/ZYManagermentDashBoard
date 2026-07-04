@@ -5,6 +5,10 @@ import type { DeptRow } from "@/actions/departments";
 import {
   createDepartment, updateDepartment, deleteDepartment, archiveDepartment,
 } from "@/actions/departments";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Alert";
+import { fmtDate } from "@/lib/utils";
 
 type Employee = { id: number; nameEn: string; nameKh: string };
 
@@ -16,10 +20,6 @@ interface Props {
 }
 
 type StatusTab = "active" | "archived" | "all";
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 // ── Inline form ─────────────────────────────────────────────────────────────
 
@@ -68,11 +68,7 @@ function DeptForm({
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {err && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--red-bg)", color: "var(--red)", fontSize: 13 }}>
-          {err}
-        </div>
-      )}
+      {err && <Alert level="error" message={err} />}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px", gap: 12 }}>
         <div>
@@ -117,27 +113,12 @@ function DeptForm({
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>
-        <button
-          type="submit" disabled={saving}
-          style={{
-            padding: "8px 20px", borderRadius: 8, border: "none",
-            background: "var(--steel)", color: "#fff",
-            fontWeight: 600, fontSize: 13, cursor: saving ? "not-allowed" : "pointer",
-            opacity: saving ? 0.7 : 1,
-          }}
-        >
-          {saving ? "Saving…" : editing ? "Save Changes" : "Create Department"}
-        </button>
-        <button
-          type="button" onClick={onDone}
-          style={{
-            padding: "8px 16px", borderRadius: 8,
-            border: "1px solid var(--border)", background: "var(--surface)",
-            color: "var(--text-2)", fontSize: 13, cursor: "pointer",
-          }}
-        >
+        <Button type="submit" loading={saving}>
+          {editing ? "Save Changes" : "Create Department"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -261,17 +242,9 @@ export function DepartmentsClient({ departments, employees, canEdit, canDelete }
           />
         </div>
         {canEdit && !showForm && (
-          <button
-            onClick={openCreate}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "7px 16px", borderRadius: 8,
-              background: "var(--steel)", color: "#fff",
-              border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer",
-            }}
-          >
-            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Add Department
-          </button>
+          <Button onClick={openCreate}>
+            + Add Department
+          </Button>
         )}
       </div>
 
@@ -337,14 +310,9 @@ export function DepartmentsClient({ departments, employees, canEdit, canDelete }
                       </span>
                     </td>
                     <td style={{ padding: "11px 14px", verticalAlign: "middle" }}>
-                      <span style={{
-                        display: "inline-block", padding: "2px 8px", borderRadius: 20,
-                        fontSize: 11, fontWeight: 600,
-                        background: d.active ? "var(--green-bg)" : "var(--border)",
-                        color: d.active ? "var(--green)" : "var(--text-3)",
-                      }}>
+                      <Badge color={d.active ? "green" : "gray"} size="sm">
                         {d.active ? "Active" : "Archived"}
-                      </span>
+                      </Badge>
                     </td>
                     <td style={{ padding: "11px 14px", verticalAlign: "middle", whiteSpace: "nowrap", color: "var(--text-3)", fontSize: 12 }}>
                       {fmtDate(d.createdAt)}

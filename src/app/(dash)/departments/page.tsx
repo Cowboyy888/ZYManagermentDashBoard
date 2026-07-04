@@ -2,6 +2,8 @@ import { requireUser } from "@/lib/auth/session";
 import { can } from "@/lib/rbac";
 import { listDepartmentsManage } from "@/actions/departments";
 import { prisma } from "@/lib/db";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Alert } from "@/components/ui/Alert";
 import { DepartmentsClient } from "./DepartmentsClient";
 
 export default async function DepartmentsPage() {
@@ -17,23 +19,23 @@ export default async function DepartmentsPage() {
   ]);
 
   if (!deptRes.ok) {
-    return <p style={{ padding: 24, color: "var(--red)" }}>{"error" in deptRes ? deptRes.error : "Failed to load"}</p>;
+    return (
+      <div style={{ padding: 24 }}>
+        <Alert level="error" title="Failed to load departments" message={"error" in deptRes ? deptRes.error : "Unknown error"} />
+      </div>
+    );
   }
 
-  const activeCount  = deptRes.data.filter(d => d.active).length;
-  const archivedCount = deptRes.data.filter(d => !d.active).length;
+  const activeCount    = deptRes.data.filter(d => d.active).length;
+  const archivedCount  = deptRes.data.filter(d => !d.active).length;
   const totalEmployees = deptRes.data.reduce((s, d) => s + d.employeeCount, 0);
 
   return (
     <div style={{ padding: 24 }}>
-      <header style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-          Departments
-        </h1>
-        <p style={{ fontSize: 13, color: "var(--text-3)" }}>
-          {activeCount} active · {archivedCount} archived · {totalEmployees} total employees
-        </p>
-      </header>
+      <PageHeader
+        title="Departments"
+        subtitle={`${activeCount} active · ${archivedCount} archived · ${totalEmployees} total employees`}
+      />
       <DepartmentsClient
         departments={deptRes.data}
         employees={employees}

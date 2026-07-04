@@ -2,6 +2,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createFactoryArea, updateFactoryArea, deleteFactoryArea } from "@/actions/factoryAreas";
+import { Button } from "@/components/ui/Button";
+import { Alert } from "@/components/ui/Alert";
 
 interface Area {
   id: number;
@@ -73,11 +75,7 @@ export function FactoryAreasClient({ areas, canEdit }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {error && (
-        <div style={{ padding: "10px 14px", background: "var(--red-bg)", color: "var(--red)", borderRadius: 8, fontSize: 13 }}>
-          {error}
-        </div>
-      )}
+      {error && <Alert level="error" message={error} />}
 
       {/* Form */}
       {showForm && (
@@ -109,14 +107,12 @@ export function FactoryAreasClient({ areas, canEdit }: Props) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-            <button type="submit" disabled={pending}
-              style={{ padding: "8px 20px", borderRadius: 8, background: "var(--steel)", color: "#fff", border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-              {pending ? "Saving…" : editing ? "Save" : "Create"}
-            </button>
-            <button type="button" onClick={cancelForm}
-              style={{ padding: "8px 16px", borderRadius: 8, background: "var(--surface-2)", color: "var(--text-2)", border: "1px solid var(--border)", fontSize: 13, cursor: "pointer" }}>
+            <Button type="submit" loading={pending}>
+              {editing ? "Save" : "Create"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={cancelForm}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -125,15 +121,9 @@ export function FactoryAreasClient({ areas, canEdit }: Props) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <p style={{ fontSize: 13, color: "var(--text-3)" }}>{areas.length} areas defined</p>
         {canEdit && !showForm && (
-          <button onClick={() => { setEditing(null); setShowForm(true); }}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 16px", borderRadius: 8,
-              background: "var(--steel)", color: "#fff",
-              border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer",
-            }}>
-            <span style={{ fontSize: 16 }}>+</span> Add Area
-          </button>
+          <Button onClick={() => { setEditing(null); setShowForm(true); }}>
+            + Add Area
+          </Button>
         )}
       </div>
 

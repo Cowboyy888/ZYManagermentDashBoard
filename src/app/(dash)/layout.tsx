@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/session";
 import { Sidebar } from "@/components/Sidebar";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { ToastProvider } from "@/components/ui/Toast";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -74,7 +75,7 @@ export default async function DashLayout({ children }: { children: React.ReactNo
           </a>
         </header>
         <main id="main-content" style={{ flex: 1 }}>
-          {children}
+          <ToastProvider>{children}</ToastProvider>
         </main>
       </div>
     </div>

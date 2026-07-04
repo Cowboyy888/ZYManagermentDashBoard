@@ -5,6 +5,10 @@ import type { PosRow } from "@/actions/positions";
 import {
   createPosition, updatePosition, deletePosition, archivePosition,
 } from "@/actions/positions";
+import { Button } from "@/components/ui/Button";
+import { Badge, type BadgeColor } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Alert";
+import { fmtDate } from "@/lib/utils";
 
 interface Props {
   positions: PosRow[];
@@ -14,16 +18,12 @@ interface Props {
 
 type StatusTab = "active" | "archived" | "all";
 
-const LEVEL_META: Record<number, { label: string; bg: string; color: string }> = {
-  1: { label: "Worker",      bg: "var(--surface-2)",  color: "var(--text-3)" },
-  2: { label: "Team Leader", bg: "var(--blue-bg)",    color: "var(--blue)"   },
-  3: { label: "Manager",     bg: "var(--purple-bg)",  color: "var(--purple)" },
-  4: { label: "Director",    bg: "var(--steel-light)", color: "var(--steel)"  },
+const LEVEL_META: Record<number, { label: string; bg: string; color: string; badgeColor: BadgeColor }> = {
+  1: { label: "Worker",      bg: "var(--surface-2)",   color: "var(--text-3)", badgeColor: "gray"   },
+  2: { label: "Team Leader", bg: "var(--blue-bg)",     color: "var(--blue)",   badgeColor: "blue"   },
+  3: { label: "Manager",     bg: "var(--purple-bg)",   color: "var(--purple)", badgeColor: "purple" },
+  4: { label: "Director",    bg: "var(--steel-light)", color: "var(--steel)",  badgeColor: "steel"  },
 };
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 // ── Inline form ─────────────────────────────────────────────────────────────
 
@@ -71,11 +71,7 @@ function PosForm({
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {err && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--red-bg)", color: "var(--red)", fontSize: 13 }}>
-          {err}
-        </div>
-      )}
+      {err && <Alert level="error" message={err} />}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 160px", gap: 12 }}>
         <div>
@@ -107,27 +103,12 @@ function PosForm({
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>
-        <button
-          type="submit" disabled={saving}
-          style={{
-            padding: "8px 20px", borderRadius: 8, border: "none",
-            background: "var(--steel)", color: "#fff",
-            fontWeight: 600, fontSize: 13, cursor: saving ? "not-allowed" : "pointer",
-            opacity: saving ? 0.7 : 1,
-          }}
-        >
-          {saving ? "Saving…" : editing ? "Save Changes" : "Create Position"}
-        </button>
-        <button
-          type="button" onClick={onDone}
-          style={{
-            padding: "8px 16px", borderRadius: 8,
-            border: "1px solid var(--border)", background: "var(--surface)",
-            color: "var(--text-2)", fontSize: 13, cursor: "pointer",
-          }}
-        >
+        <Button type="submit" loading={saving}>
+          {editing ? "Save Changes" : "Create Position"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -296,17 +277,9 @@ export function PositionsClient({ positions, canEdit, canDelete }: Props) {
           />
         </div>
         {canEdit && !showForm && (
-          <button
-            onClick={openCreate}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "7px 16px", borderRadius: 8,
-              background: "var(--steel)", color: "#fff",
-              border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer",
-            }}
-          >
-            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Add Position
-          </button>
+          <Button onClick={openCreate}>
+            + Add Position
+          </Button>
         )}
       </div>
 
@@ -355,13 +328,9 @@ export function PositionsClient({ positions, canEdit, canDelete }: Props) {
                         )}
                       </td>
                       <td style={{ padding: "11px 14px", verticalAlign: "middle" }}>
-                        <span style={{
-                          display: "inline-block", padding: "2px 10px", borderRadius: 20,
-                          fontSize: 12, fontWeight: 600,
-                          background: meta.bg, color: meta.color,
-                        }}>
+                        <Badge color={meta.badgeColor}>
                           {p.level} — {meta.label}
-                        </span>
+                        </Badge>
                       </td>
                       <td style={{ padding: "11px 14px", verticalAlign: "middle", maxWidth: 260 }}>
                         <span style={{ color: "var(--text-2)", fontSize: 12 }}>{p.description || "—"}</span>
@@ -377,14 +346,9 @@ export function PositionsClient({ positions, canEdit, canDelete }: Props) {
                         </span>
                       </td>
                       <td style={{ padding: "11px 14px", verticalAlign: "middle" }}>
-                        <span style={{
-                          display: "inline-block", padding: "2px 8px", borderRadius: 20,
-                          fontSize: 11, fontWeight: 600,
-                          background: p.active ? "var(--green-bg)" : "var(--border)",
-                          color: p.active ? "var(--green)" : "var(--text-3)",
-                        }}>
+                        <Badge color={p.active ? "green" : "gray"} size="sm">
                           {p.active ? "Active" : "Archived"}
-                        </span>
+                        </Badge>
                       </td>
                       <td style={{ padding: "11px 14px", verticalAlign: "middle", whiteSpace: "nowrap", color: "var(--text-3)", fontSize: 12 }}>
                         {fmtDate(p.createdAt)}

@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/session";
 import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { FactoryAreasClient } from "./FactoryAreasClient";
 
 export default async function FactoryAreasPage() {
@@ -12,10 +13,10 @@ export default async function FactoryAreasPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Factory Areas</h1>
-        <p style={{ fontSize: 13, color: "var(--text-3)" }}>Manage production zones, warehouses, and office spaces</p>
-      </header>
+      <PageHeader
+        title="Factory Areas"
+        subtitle="Manage production zones, warehouses, and office spaces"
+      />
       <FactoryAreasClient
         areas={areas.map(a => ({
           id: a.id, name: a.name, code: a.code,
