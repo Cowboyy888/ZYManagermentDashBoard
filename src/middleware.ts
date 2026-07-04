@@ -21,7 +21,9 @@ export function middleware(request: NextRequest): NextResponse {
   // Always let these through — they are not protected resources.
   if (
     pathname.startsWith("/api/auth") || // Better Auth handler
-    pathname === "/login"               // Login page itself
+    pathname === "/login" ||            // Internal login page
+    pathname === "/portal/login" ||     // Portal login page
+    pathname === "/portal/register"     // Customer self-registration
   ) {
     return NextResponse.next();
   }

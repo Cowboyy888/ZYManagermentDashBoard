@@ -2,7 +2,7 @@
 // THE single source of permission truth. Every Server Action calls can() first.
 // No permission decision is made anywhere else in the codebase.
 
-export type Role = "OWNER" | "HR_MANAGER" | "SUPERVISOR" | "VIEWER";
+export type Role = "OWNER" | "HR_MANAGER" | "SUPERVISOR" | "VIEWER" | "CUSTOMER_PORTAL" | "SUPPLIER_PORTAL";
 
 // Actions are namespaced "domain.verb". Add here, nowhere else.
 export type Action =
@@ -24,7 +24,8 @@ export type Action =
   | "bi.read" | "bi.manage"
   | "notification.read" | "notification.manage"
   | "audit.view"
-  | "system.health";
+  | "system.health"
+  | "portal.manage";
 
 // Context for scoped checks. A SUPERVISOR may only act within their own
 // department; actorDeptId is theirs, targetDeptId is the record's.
@@ -101,6 +102,7 @@ const MATRIX: Record<Action, Role[]> = {
 
   "audit.view":    ["OWNER", "HR_MANAGER"],
   "system.health": ["OWNER"],
+  "portal.manage": ["OWNER", "HR_MANAGER"],
 };
 
 // Actions where a SUPERVISOR is confined to their own department.

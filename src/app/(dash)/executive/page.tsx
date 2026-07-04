@@ -330,6 +330,20 @@ export default async function ExecutivePage() {
   const qcPassRate = prodQcLast30.length > 0 ? Math.round((qcPassCount / prodQcLast30.length) * 100) : null;
 
   const [invSummary, purchSummary, salesSummary, qmsSummary, cmmsSummary, financeSummary] = await Promise.all([invSummaryPromise, purchSummaryPromise, salesSummaryPromise, qmsSummaryPromise, cmmsSummaryPromise, financeSummaryPromise]);
+
+  const [
+    portalActiveCustomers,
+    portalActiveSuppliers,
+    portalOpenTickets,
+    portalPendingAccounts,
+    portalOpenThreads,
+  ] = await Promise.all([
+    prisma.portalAccount.count({ where: { status: "ACTIVE", portalType: "CUSTOMER" } }).catch(() => null),
+    prisma.portalAccount.count({ where: { status: "ACTIVE", portalType: "SUPPLIER" } }).catch(() => null),
+    prisma.supportTicket.count({ where: { status: { in: ["OPEN", "IN_PROGRESS"] } } }).catch(() => null),
+    prisma.portalAccount.count({ where: { status: "PENDING" } }).catch(() => null),
+    prisma.portalThread.count({ where: { status: "OPEN" } }).catch(() => null),
+  ]);
   const invData      = invSummary     && invSummary.ok     ? invSummary.data     : null;
   const purchData    = purchSummary   && purchSummary.ok   ? purchSummary.data   : null;
   const salesData    = salesSummary   && salesSummary.ok   ? salesSummary.data   : null;
@@ -422,6 +436,12 @@ export default async function ExecutivePage() {
         financeCashBalance={financeData?.cashBalance ?? null}
         financeArBalance={financeData?.arBalance ?? null}
         financeApBalance={financeData?.apBalance ?? null}
+        // Portal
+        portalActiveCustomers={portalActiveCustomers}
+        portalActiveSuppliers={portalActiveSuppliers}
+        portalOpenTickets={portalOpenTickets}
+        portalPendingAccounts={portalPendingAccounts}
+        portalOpenThreads={portalOpenThreads}
         // Hiring trend
         hiringByMonth={hiringByMonth}
         // Recent activity

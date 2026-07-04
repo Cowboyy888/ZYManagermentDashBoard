@@ -82,6 +82,12 @@ interface Props {
   financeCashBalance: number | null;
   financeArBalance: number | null;
   financeApBalance: number | null;
+  // Portal
+  portalActiveCustomers: number | null;
+  portalActiveSuppliers: number | null;
+  portalOpenTickets: number | null;
+  portalPendingAccounts: number | null;
+  portalOpenThreads: number | null;
   // Hiring + activity
   hiringByMonth: { month: string; count: number }[];
   recentHires: { id: number; nameEn: string; nameKh: string; departmentName: string | null; hireDate: string }[];
@@ -205,6 +211,7 @@ export function ExecutiveDashboard({
   qmsPassRate, qmsOpenNCRs, qmsOverdueCAPAs, qmsCertificatesThisMonth,
   cmmsAvailability, cmmsOpenWOs, cmmsDueThisWeek, cmmsMonthlyCostUsd,
   financeRevenue, financeExpenses, financeProfit, financeCashBalance, financeArBalance, financeApBalance,
+  portalActiveCustomers, portalActiveSuppliers, portalOpenTickets, portalPendingAccounts, portalOpenThreads,
   hiringByMonth,
   recentHires, recentLeave, recentPayrollRuns,
 }: Props) {
@@ -1011,6 +1018,23 @@ export function ExecutiveDashboard({
               sub="accounts payable"
               accent={(financeApBalance ?? 0) > 0 ? "amber" : "green"}
             />
+          </div>
+        </div>
+      )}
+
+      {/* ── Customer & Supplier Portal Section ──────────────────────────────────── */}
+      {(portalActiveCustomers !== null || portalActiveSuppliers !== null) && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 }}>Customer & Supplier Portal</h2>
+            <a href="/portal" style={{ fontSize: 12, color: "var(--steel)", textDecoration: "none" }}>Manage Portal →</a>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
+            <Kpi label="Active Customers" value={portalActiveCustomers ?? 0} accent="blue" />
+            <Kpi label="Active Suppliers" value={portalActiveSuppliers ?? 0} accent="green" />
+            <Kpi label="Open Support Tickets" value={portalOpenTickets ?? 0} accent={(portalOpenTickets ?? 0) > 0 ? "amber" : "green"} />
+            <Kpi label="Pending Approvals" value={portalPendingAccounts ?? 0} accent={(portalPendingAccounts ?? 0) > 0 ? "red" : "green"} sub="new registrations" />
+            <Kpi label="Open Conversations" value={portalOpenThreads ?? 0} accent={(portalOpenThreads ?? 0) > 0 ? "amber" : "green"} sub="unanswered messages" />
           </div>
         </div>
       )}

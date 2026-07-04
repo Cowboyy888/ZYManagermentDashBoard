@@ -136,6 +136,16 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    label: "Portal",
+    items: [
+      { href: "/portal",                    label: "Overview",     icon: GlobeIcon },
+      { href: "/portal/customers",          label: "Customers",    icon: UsersIcon },
+      { href: "/portal/suppliers",          label: "Suppliers",    icon: BuildingIcon },
+      { href: "/portal/tickets",            label: "Tickets",      icon: ClipboardIcon },
+      { href: "/portal/announcements",      label: "Announcements", icon: BellIcon },
+    ],
+  },
+  {
     label: "Admin",
     items: [
       { href: "/admin/users",   label: "Users",       icon: KeyIcon },
@@ -572,6 +582,14 @@ function HeartPulseIcon({ size = 18 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
       <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
       <path d="M3.22 12H9.5l1.5-3 2 4.5 1.5-6 1.5 4.5h5.27"/>
+    </svg>
+  );
+}
+function GlobeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
     </svg>
   );
 }
