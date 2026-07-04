@@ -1,60 +1,46 @@
-// ZY Steel brand logo — accurate SVG recreation of the red hexagonal ZY mark
-interface Props { size?: number; className?: string; }
+interface Props { size?: number; className?: string; color?: string; }
 
-export function ZysteelLogo({ size = 36, className = "" }: Props) {
+export function ZysteelLogo({ size = 36, className = "", color = "#DC2626" }: Props) {
   return (
     <svg
       width={size}
-      height={size * 0.87}
-      viewBox="0 0 120 104"
+      height={size}
+      viewBox="0 0 1024 1024"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-label="Zysteel logo"
       role="img"
     >
-      {/* ── Outer hexagonal box shape ── */}
-      {/*
-        The shape is a wide flat hexagon resembling a 3D box face:
-          top-left slope → top flat → right slope → bottom-right slope → bottom flat → left slope
-      */}
-      <polygon
-        points="
-          8,52
-          32,8
-          72,8
-          112,52
-          88,96
-          28,96
-        "
-        fill="#DC2626"
-      />
-
-      {/* ── Z letterform (white cutouts) ── */}
-      {/* Top bar */}
-      <rect x="16" y="26" width="36" height="10" rx="1" fill="white" />
-      {/* Diagonal stroke */}
-      <polygon points="48,36 52,36 30,68 26,68" fill="white" />
-      {/* Bottom bar */}
-      <rect x="16" y="68" width="36" height="10" rx="1" fill="white" />
-
-      {/* ── Checker / pixel accent (top-right of Z / between letters) ── */}
-      {/* Row 1: 2 squares */}
-      <rect x="52" y="18" width="7" height="7" fill="white" />
-      <rect x="66" y="18" width="7" height="7" fill="white" />
-      {/* Row 2: 2 squares (offset) */}
-      <rect x="59" y="25" width="7" height="7" fill="white" />
-      <rect x="73" y="25" width="7" height="7" fill="white" />
-      {/* Row 3: 1 square */}
-      <rect x="52" y="32" width="7" height="7" fill="white" />
-      <rect x="66" y="32" width="7" height="7" fill="white" />
-
-      {/* ── Y letterform (white) ── */}
-      {/* Left arm of Y */}
-      <polygon points="62,26 71,26 76,50 67,50" fill="white" />
-      {/* Right arm of Y */}
-      <polygon points="87,26 96,26 81,50 72,50" fill="white" />
-      {/* Stem of Y */}
-      <rect x="70" y="50" width="10" height="28" rx="1" fill="white" />
+      <g transform="translate(0,1024) scale(0.1,-0.1)" fill={color} stroke="none">
+        <path d="M5412 8298 l3 -162 129 -53 c185 -76 175 -66 173 -168 -2 -71 -5 -85
+-17 -81 -8 2 -107 43 -220 89 -113 47 -211 87 -217 89 -10 2 -13 -360 -15
+-1715 -2 -944 -1 -1717 2 -1717 8 0 104 37 227 89 98 41 294 122 1038 428 22
+9 43 19 47 22 4 3 8 438 10 965 l3 960 -165 67 -165 67 -3 206 c-1 113 0 206
+3 206 7 0 188 -73 255 -103 30 -13 65 -28 78 -31 l23 -8 -3 101 -3 101 -177
+72 -178 71 -2 165 -3 164 -135 54 c-74 30 -138 54 -142 54 -4 0 -8 -68 -8
+-151 0 -122 -3 -150 -13 -146 -8 3 -59 24 -115 47 l-102 42 0 157 0 156 -122
+49 c-68 28 -138 56 -156 63 l-32 13 2 -162z m686 -447 l132 -54 0 -95 c0 -85
+-2 -94 -17 -88 -10 4 -71 28 -135 54 l-118 47 0 82 c0 45 -3 89 -7 99 -3 9 -2
+15 4 13 5 -2 69 -28 141 -58z m-258 -90 l105 -47 3 -208 c2 -165 0 -207 -10
+-203 -7 3 -59 24 -115 47 l-102 42 -3 209 c-2 135 1 209 7 208 6 0 57 -22 115
+-48z m272 -539 l117 -47 3 -148 c2 -82 0 -151 -4 -153 -4 -3 -67 19 -140 49
+l-133 53 1 114 c3 201 2 193 22 186 9 -4 70 -28 134 -54z"/>
+        <path d="M4520 7980 c-688 -295 -1479 -633 -1947 -833 l-403 -172 0 -482 c0
+-266 2 -483 3 -483 2 0 46 18 98 39 52 21 162 67 244 101 83 34 213 88 290
+120 657 273 1013 420 1019 420 3 0 6 -354 5 -786 0 -432 3 -790 8 -795 5 -5
+132 -61 283 -125 724 -306 884 -373 887 -370 2 1 2 806 1 1789 l-3 1786 -485
+-209z"/>
+        <path d="M6838 6188 l-3 -1341 -100 -43 c-261 -109 -548 -229 -725 -302 -107
+-44 -305 -126 -440 -182 -135 -56 -262 -109 -282 -118 l-38 -15 0 -464 0 -464
+23 7 c22 7 191 78 782 329 165 70 415 176 555 235 406 172 1110 471 1295 552
+l170 73 3 1286 2 1286 -432 178 c-619 255 -791 325 -800 325 -4 0 -9 -604 -10
+-1342z"/>
+        <path d="M3440 6178 c-36 -16 -270 -117 -520 -224 -250 -108 -520 -224 -600
+-259 l-145 -65 -3 -589 -2 -588 422 -181 c233 -99 603 -257 823 -350 1495
+-635 1583 -672 1591 -672 2 0 3 217 2 482 l-3 482 -275 117 c-151 64 -394 167
+-540 229 -277 118 -622 262 -652 273 -17 6 -18 48 -18 692 0 377 -3 685 -7
+684 -5 0 -37 -14 -73 -31z"/>
+      </g>
     </svg>
   );
 }
