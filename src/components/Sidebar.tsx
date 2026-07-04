@@ -154,9 +154,10 @@ const NAV_SECTIONS = [
   {
     label: "Admin",
     items: [
-      { href: "/admin/users",   label: "Users",       icon: KeyIcon },
-      { href: "/admin/audit",   label: "Audit Log",   icon: ClipboardIcon },
+      { href: "/admin/users",   label: "Users",         icon: KeyIcon },
+      { href: "/admin/audit",   label: "Audit Log",     icon: ClipboardIcon },
       { href: "/admin/health",  label: "System Health", icon: HeartPulseIcon },
+      { href: "/admin/import",  label: "Data Import",   icon: ClipboardIcon },
     ],
   },
   {
