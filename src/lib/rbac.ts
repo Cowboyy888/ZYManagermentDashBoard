@@ -25,7 +25,8 @@ export type Action =
   | "notification.read" | "notification.manage"
   | "audit.view"
   | "system.health"
-  | "portal.manage";
+  | "portal.manage"
+  | "factory.view" | "factory.manage";
 
 // Context for scoped checks. A SUPERVISOR may only act within their own
 // department; actorDeptId is theirs, targetDeptId is the record's.
@@ -103,6 +104,9 @@ const MATRIX: Record<Action, Role[]> = {
   "audit.view":    ["OWNER", "HR_MANAGER"],
   "system.health": ["OWNER"],
   "portal.manage": ["OWNER", "HR_MANAGER"],
+
+  "factory.view":   ["OWNER", "HR_MANAGER", "SUPERVISOR", "VIEWER"],
+  "factory.manage": ["OWNER", "HR_MANAGER", "SUPERVISOR"],
 };
 
 // Actions where a SUPERVISOR is confined to their own department.

@@ -88,6 +88,16 @@ interface Props {
   portalOpenTickets: number | null;
   portalPendingAccounts: number | null;
   portalOpenThreads: number | null;
+  // Smart Factory
+  factoryRunningMachines: number | null;
+  factoryTotalMachines: number | null;
+  factoryActiveAlarms: number | null;
+  factoryCriticalAlarms: number | null;
+  factoryTodayOutputKg: number | null;
+  factoryEfficiencyPct: number | null;
+  factoryOEE: number | null;
+  factoryTodayDowntimeMin: number | null;
+  factoryOpenOrders: number | null;
   // Hiring + activity
   hiringByMonth: { month: string; count: number }[];
   recentHires: { id: number; nameEn: string; nameKh: string; departmentName: string | null; hireDate: string }[];
@@ -212,6 +222,8 @@ export function ExecutiveDashboard({
   cmmsAvailability, cmmsOpenWOs, cmmsDueThisWeek, cmmsMonthlyCostUsd,
   financeRevenue, financeExpenses, financeProfit, financeCashBalance, financeArBalance, financeApBalance,
   portalActiveCustomers, portalActiveSuppliers, portalOpenTickets, portalPendingAccounts, portalOpenThreads,
+  factoryRunningMachines, factoryTotalMachines, factoryActiveAlarms, factoryCriticalAlarms,
+  factoryTodayOutputKg, factoryEfficiencyPct, factoryOEE, factoryTodayDowntimeMin, factoryOpenOrders,
   hiringByMonth,
   recentHires, recentLeave, recentPayrollRuns,
 }: Props) {
@@ -1018,6 +1030,25 @@ export function ExecutiveDashboard({
               sub="accounts payable"
               accent={(financeApBalance ?? 0) > 0 ? "amber" : "green"}
             />
+          </div>
+        </div>
+      )}
+
+      {/* ── Smart Factory Section ───────────────────────────────────────────────── */}
+      {factoryTodayOutputKg !== null && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 }}>Smart Factory</h2>
+            <a href="/factory" style={{ fontSize: 12, color: "var(--steel)", textDecoration: "none" }}>Factory Overview →</a>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12 }}>
+            <Kpi label="Today Output" value={`${factoryTodayOutputKg} kg`} accent="green" />
+            <Kpi label="Efficiency" value={`${factoryEfficiencyPct ?? 0}%`} accent={factoryEfficiencyPct !== null ? (factoryEfficiencyPct >= 85 ? "green" : factoryEfficiencyPct >= 70 ? "amber" : "red") : "steel"} />
+            {factoryOEE !== null && <Kpi label="OEE" value={`${factoryOEE}%`} accent={factoryOEE >= 85 ? "green" : factoryOEE >= 65 ? "amber" : "red"} />}
+            <Kpi label="Running Machines" value={`${factoryRunningMachines ?? 0}/${factoryTotalMachines ?? 0}`} accent="blue" />
+            <Kpi label="Active Alarms" value={factoryActiveAlarms ?? 0} accent={(factoryCriticalAlarms ?? 0) > 0 ? "red" : (factoryActiveAlarms ?? 0) > 0 ? "amber" : "green"} sub={(factoryCriticalAlarms ?? 0) > 0 ? `${factoryCriticalAlarms} critical` : undefined} />
+            <Kpi label="Downtime Today" value={`${factoryTodayDowntimeMin ?? 0} min`} accent={(factoryTodayDowntimeMin ?? 0) > 60 ? "red" : "steel"} />
+            {factoryOpenOrders !== null && <Kpi label="Open Orders" value={factoryOpenOrders} accent="purple" />}
           </div>
         </div>
       )}

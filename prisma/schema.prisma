@@ -128,6 +128,8 @@ model User {
   ticketMessages     SupportTicketMessage[]  @relation("TicketMessageSender")
   announcements      PortalAnnouncement[]    @relation("AnnouncementCreatedBy")
   documentLogs       PortalDocumentLog[]     @relation("DocLogUser")
+  acknowledgedAlarms FactoryAlarm[]          @relation("AlarmAcknowledgedBy")
+  resolvedAlarms     FactoryAlarm[]          @relation("AlarmResolvedBy")
 
   @@index([role])
   @@map("user")
@@ -182,6 +184,7 @@ model FactoryArea {
   employees   Employee[]
   machines    Machine[]
   dailyReports DailyProductionReport[]
+  iotDevices  IoTDevice[]
 }
 
 enum DocumentType {
@@ -268,6 +271,8 @@ model Employee {
   assignedMachine             Machine[]               @relation("TechnicianAssignment")
   assignedWorkOrders          WorkOrder[]             @relation("WOAssignedTo")
   scheduleAssignments         MaintenanceSchedule[]   @relation("ScheduleAssignedTo")
+  operatedMachineMetrics      MachineMetric[]         @relation("MachineOperator")
+  machineRuntimeLogs          MachineRuntimeLog[]     @relation("RuntimeOperator")
 
   @@index([departmentId])
   @@index([status])
@@ -588,6 +593,11 @@ model Machine {
   productionOrders     ProductionOrder[]
   workOrders           WorkOrder[]
   maintenanceSchedules MaintenanceSchedule[]
+  metric               MachineMetric?
+  runtimeLogs          MachineRuntimeLog[]
+  alarms               FactoryAlarm[]
+  oeeRecords           OEERecord[]
+  iotDevices           IoTDevice[]
 
   @@index([factoryAreaId])
   @@index([status])
@@ -648,6 +658,7 @@ model ProductionOrder {
   qualityChecks      QualityCheck[]
   qualityInspections QualityInspection[]
   stockTransactions  StockTransaction[]
+  machineMetrics     MachineMetric[]      @relation("MetricCurrentOrder")
 
   @@index([status])
   @@index([plannedDate])
@@ -1792,4 +1803,181 @@ model PortalDocumentLog {
   @@index([userId])
   @@index([documentType, documentId])
   @@index([downloadedAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Smart Factory — MES + IoT Extension (Phase 1)
+// ─────────────────────────────────────────────────────────────
+
+enum AlarmType {
+  MACHINE_STOPPED
+  PRODUCTION_BELOW_TARGET
+  HIGH_DEFECT_RATE
+  LOW_RAW_MATERIAL
+  MACHINE_OVERHEATING
+  MAINTENANCE_OVERDUE
+  POWER_ANOMALY
+  CUSTOM
+}
+
+enum AlarmSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlarmStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum IoTDeviceType {
+  PLC
+  BARCODE_SCANNER
+  QR_SCANNER
+  RFID
+  SCALE
+  TEMP_SENSOR
+  POWER_METER
+  CCTV
+  OTHER
+}
+
+// Live machine metrics — one row per machine (upsert)
+model MachineMetric {
+  id             Int      @id @default(autoincrement())
+  machineId      Int      @unique
+  isRunning      Boolean  @default(false)
+  currentOrderId Int?
+  speedRpm       Decimal? @db.Decimal(8, 2)
+  outputCount    Int      @default(0)   // this shift session
+  todayOutput    Int      @default(0)   // cumulative today
+  temperature    Decimal? @db.Decimal(5, 2)
+  powerKw        Decimal? @db.Decimal(8, 2)
+  runtimeMin     Int      @default(0)   // today running minutes
+  downtimeMin    Int      @default(0)   // today downtime minutes
+  operatorId     Int?
+  source         String   @default("MANUAL") // MANUAL | PLC | MODBUS | MQTT
+  updatedAt      DateTime @updatedAt
+
+  machine        Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  currentOrder   ProductionOrder? @relation("MetricCurrentOrder", fields: [currentOrderId], references: [id])
+  operator       Employee?       @relation("MachineOperator", fields: [operatorId], references: [id])
+
+  @@index([updatedAt])
+}
+
+// Daily machine runtime totals per shift
+model MachineRuntimeLog {
+  id          Int      @id @default(autoincrement())
+  machineId   Int
+  logDate     DateTime @db.Date
+  shiftType   String?  // DAY | AFTERNOON | NIGHT | null (full day)
+  runtimeMin  Int      @default(0)
+  downtimeMin Int      @default(0)
+  outputCount Int      @default(0)
+  outputKg    Decimal  @db.Decimal(10, 2) @default(0)
+  operatorId  Int?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  machine     Machine   @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  operator    Employee? @relation("RuntimeOperator", fields: [operatorId], references: [id])
+
+  @@unique([machineId, logDate, shiftType])
+  @@index([logDate])
+  @@index([machineId])
+}
+
+// Factory-wide alarm events
+model FactoryAlarm {
+  id               Int           @id @default(autoincrement())
+  machineId        Int?
+  alarmType        AlarmType
+  severity         AlarmSeverity @default(WARNING)
+  title            String
+  description      String?
+  status           AlarmStatus   @default(ACTIVE)
+  triggeredAt      DateTime      @default(now())
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  resolvedAt       DateTime?
+  resolvedById     String?
+  notes            String?
+
+  machine          Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  acknowledgedBy   User?    @relation("AlarmAcknowledgedBy", fields: [acknowledgedById], references: [id])
+  resolvedBy       User?    @relation("AlarmResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([status, triggeredAt])
+  @@index([machineId])
+}
+
+// OEE calculations per machine per period
+model OEERecord {
+  id             Int      @id @default(autoincrement())
+  machineId      Int
+  periodType     String   // DAY | WEEK | MONTH
+  periodDate     DateTime @db.Date
+  plannedTimeMin Int      @default(480)  // planned production time in minutes
+  downtimeMin    Int      @default(0)
+  targetOutput   Int?
+  actualOutput   Int      @default(0)   // good parts
+  totalOutput    Int      @default(0)   // total including defects
+  defectCount    Int      @default(0)
+  availability   Decimal  @db.Decimal(5, 2) @default(0)
+  performance    Decimal  @db.Decimal(5, 2) @default(0)
+  quality        Decimal  @db.Decimal(5, 2) @default(0)
+  oee            Decimal  @db.Decimal(5, 2) @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  machine        Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@unique([machineId, periodType, periodDate])
+  @@index([machineId, periodType])
+  @@index([periodDate])
+}
+
+// IoT device registry for future PLC/sensor integration
+model IoTDevice {
+  id            Int           @id @default(autoincrement())
+  deviceCode    String        @unique
+  name          String
+  deviceType    IoTDeviceType
+  protocol      String?       // MODBUS | OPCUA | MQTT | HTTP | SERIAL | REST
+  ipAddress     String?
+  port          Int?
+  machineId     Int?
+  factoryAreaId Int?
+  active        Boolean       @default(true)
+  lastSeenAt    DateTime?
+  config        Json?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  machine       Machine?     @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  factoryArea   FactoryArea? @relation(fields: [factoryAreaId], references: [id], onDelete: SetNull)
+  readings      IoTReading[]
+
+  @@index([machineId])
+  @@index([active])
+}
+
+// Time-series IoT sensor readings
+model IoTReading {
+  id         BigInt    @id @default(autoincrement())
+  deviceId   Int
+  metric     String    // "temperature" | "speed_rpm" | "power_kw" | "output_count"
+  value      Decimal   @db.Decimal(15, 4)
+  unit       String?   // "°C" | "RPM" | "kW" | "pcs"
+  recordedAt DateTime  @default(now())
+
+  device     IoTDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, metric, recordedAt])
+  @@index([recordedAt])
 }

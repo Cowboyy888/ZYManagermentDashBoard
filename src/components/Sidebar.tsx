@@ -124,9 +124,15 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: "Factory",
+    label: "Smart Factory",
     items: [
-      { href: "/factory-areas", label: "Factory Areas",  icon: BuildingIcon },
+      { href: "/factory",              label: "Overview",      icon: ChartIcon },
+      { href: "/factory/machines",     label: "Machines",      icon: GearIcon },
+      { href: "/factory/alarms",       label: "Alarms",        icon: AlertIcon },
+      { href: "/factory/oee",          label: "OEE",           icon: ChartIcon },
+      { href: "/factory/shifts",       label: "Shifts",        icon: ClockIcon },
+      { href: "/factory/iot",          label: "IoT Devices",   icon: GlobeIcon },
+      { href: "/factory-areas",        label: "Factory Areas", icon: BuildingIcon },
     ],
   },
   {

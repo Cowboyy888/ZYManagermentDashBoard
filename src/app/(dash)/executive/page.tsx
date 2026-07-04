@@ -344,6 +344,36 @@ export default async function ExecutivePage() {
     prisma.portalAccount.count({ where: { status: "PENDING" } }).catch(() => null),
     prisma.portalThread.count({ where: { status: "OPEN" } }).catch(() => null),
   ]);
+
+  // Smart Factory live data
+  const todayStr = today.toISOString().slice(0, 10);
+  const [
+    factoryTodayReports,
+    factoryRunningCount,
+    factoryTotalCount,
+    factoryActiveAlarms,
+    factoryCriticalAlarms,
+    factoryOpenOrders,
+    factoryLatestOEE,
+  ] = await Promise.all([
+    prisma.dailyProductionReport.aggregate({
+      where: { reportDate: { equals: new Date(todayStr) } },
+      _sum: { meshProducedKg: true, downtimeMinutes: true },
+    }).catch(() => null),
+    prisma.machineMetric.count({ where: { isRunning: true } }).catch(() => null),
+    prisma.machine.count({ where: { status: { not: "RETIRED" } } }).catch(() => null),
+    prisma.factoryAlarm.count({ where: { status: "ACTIVE" } }).catch(() => null),
+    prisma.factoryAlarm.count({ where: { status: "ACTIVE", severity: "CRITICAL" } }).catch(() => null),
+    prisma.productionOrder.count({ where: { status: "IN_PROGRESS" } }).catch(() => null),
+    prisma.oEERecord.aggregate({
+      where: { periodType: "DAY", periodDate: { gte: new Date(Date.now() - 7 * 86400000) } },
+      _avg: { oee: true },
+    }).catch(() => null),
+  ]);
+  const factoryTodayOutputKg = factoryTodayReports?._sum.meshProducedKg ? Math.round(Number(factoryTodayReports._sum.meshProducedKg) * 10) / 10 : null;
+  const factoryTodayDowntimeMin = factoryTodayReports?._sum.downtimeMinutes ?? null;
+  const factoryEfficiencyPct = factoryTodayDowntimeMin !== null ? Math.round(((480 - Math.min(factoryTodayDowntimeMin, 480)) / 480) * 100) : null;
+  const factoryOEE = factoryLatestOEE?._avg.oee ? Math.round(Number(factoryLatestOEE._avg.oee) * 10) / 10 : null;
   const invData      = invSummary     && invSummary.ok     ? invSummary.data     : null;
   const purchData    = purchSummary   && purchSummary.ok   ? purchSummary.data   : null;
   const salesData    = salesSummary   && salesSummary.ok   ? salesSummary.data   : null;
@@ -442,6 +472,16 @@ export default async function ExecutivePage() {
         portalOpenTickets={portalOpenTickets}
         portalPendingAccounts={portalPendingAccounts}
         portalOpenThreads={portalOpenThreads}
+        // Smart Factory
+        factoryRunningMachines={factoryRunningCount}
+        factoryTotalMachines={factoryTotalCount}
+        factoryActiveAlarms={factoryActiveAlarms}
+        factoryCriticalAlarms={factoryCriticalAlarms}
+        factoryTodayOutputKg={factoryTodayOutputKg}
+        factoryEfficiencyPct={factoryEfficiencyPct}
+        factoryOEE={factoryOEE}
+        factoryTodayDowntimeMin={factoryTodayDowntimeMin !== null ? Number(factoryTodayDowntimeMin) : null}
+        factoryOpenOrders={factoryOpenOrders}
         // Hiring trend
         hiringByMonth={hiringByMonth}
         // Recent activity
