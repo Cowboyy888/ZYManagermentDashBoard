@@ -56,7 +56,7 @@ export function PurchasingAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Spend"]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Spend"]} />
               <Bar dataKey="amount" name="Spend" fill="#f97316" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -73,7 +73,7 @@ export function PurchasingAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={110} />
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                 <Bar dataKey="orderCount" name="POs" fill="#6366f1" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -88,7 +88,7 @@ export function PurchasingAnalytics({ data }: { data: Data }) {
                 <Pie data={data.posByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, count }) => `${count}`} labelLine={false}>
                   {data.posByStatus.map((p) => <Cell key={p.status} fill={STATUS_COLORS[p.status] ?? "#94a3b8"} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

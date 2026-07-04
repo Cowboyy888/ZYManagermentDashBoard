@@ -261,7 +261,7 @@ export function DashboardClient({
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-3)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "var(--text-3)" }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip
-                contentStyle={{ border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, background: "var(--surface)", color: "var(--text)" }}
                 cursor={{ fill: "var(--surface-2)" }}
               />
               <Bar dataKey="count" name="New hires" fill="var(--steel)" radius={[4, 4, 0, 0]} />
@@ -286,7 +286,7 @@ export function DashboardClient({
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, background: "var(--surface)", color: "var(--text)" }}
               />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
             </PieChart>

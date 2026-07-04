@@ -75,7 +75,7 @@ export function MaintenanceAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="preventive" name="Preventive" fill="#6366f1" stackId="a" />
               <Bar dataKey="corrective" name="Corrective" fill="#f59e0b" stackId="a" radius={[3, 3, 0, 0]} />
@@ -94,7 +94,7 @@ export function MaintenanceAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Cost"]} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Cost"]} />
                 <Bar dataKey="cost" name="Cost ($)" fill="#ef4444" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -109,7 +109,7 @@ export function MaintenanceAnalytics({ data }: { data: Data }) {
                 <Pie data={data.woByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={70} label={({ status, count }) => `${status} (${count})`} labelLine={false}>
                   {data.woByStatus.map((w) => <Cell key={w.status} fill={STATUS_COLORS[w.status] ?? "#94a3b8"} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

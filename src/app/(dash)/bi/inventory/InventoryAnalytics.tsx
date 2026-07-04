@@ -49,7 +49,7 @@ export function InventoryAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="code" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Value"]} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Value"]} />
                 <Bar dataKey="value" name="Value" fill="#6366f1" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -64,7 +64,7 @@ export function InventoryAnalytics({ data }: { data: Data }) {
                 <Pie data={data.byWarehouse} dataKey="value" nameKey="code" cx="50%" cy="50%" outerRadius={80} label={({ code, percent }) => `${code} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                   {data.byWarehouse.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Value"]} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Value"]} />
               </PieChart>
             </ResponsiveContainer>
           </div>

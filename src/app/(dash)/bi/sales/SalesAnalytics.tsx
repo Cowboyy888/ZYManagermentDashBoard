@@ -65,7 +65,7 @@ export function SalesAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Revenue"]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Revenue"]} />
               <Bar dataKey="amount" name="Revenue" fill="#10b981" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -82,7 +82,7 @@ export function SalesAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Revenue"]} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Revenue"]} />
                 <Bar dataKey="totalUsd" name="Total Revenue" fill="#6366f1" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -97,7 +97,7 @@ export function SalesAnalytics({ data }: { data: Data }) {
                 <Pie data={data.quotationsByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, count }) => `${status} (${count})`} labelLine={false}>
                   {data.quotationsByStatus.map((q) => <Cell key={q.status} fill={STATUS_COLORS[q.status] ?? "#94a3b8"} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

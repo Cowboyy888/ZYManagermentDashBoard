@@ -53,7 +53,7 @@ export function ProductionAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.max(0, Math.floor(data.dailyTrend.length / 10))} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}kg`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v} kg`, "Output"]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v} kg`, "Output"]} />
               <Line type="monotone" dataKey="kg" stroke="#10b981" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -70,7 +70,7 @@ export function ProductionAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}t`} />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v.toLocaleString()} kg`, "Production"]} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v.toLocaleString()} kg`, "Production"]} />
                 <Bar dataKey="kg" name="Production" fill="#10b981" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -85,7 +85,7 @@ export function ProductionAnalytics({ data }: { data: Data }) {
                 <Pie data={data.machinesByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, count }) => `${status} (${count})`} labelLine={false}>
                   {data.machinesByStatus.map((m) => <Cell key={m.status} fill={STATUS_COLORS[m.status] ?? "#94a3b8"} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -102,7 +102,7 @@ export function ProductionAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v}h`, "Downtime"]} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v}h`, "Downtime"]} />
                 <Bar dataKey="downtimeHours" name="Downtime (h)" fill="#ef4444" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -117,7 +117,7 @@ export function ProductionAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="status" tick={{ fontSize: 11 }} width={90} />
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                 <Bar dataKey="count" name="Orders" radius={[0, 3, 3, 0]}>
                   {data.ordersByStatus.map((o) => <Cell key={o.status} fill={ORDER_COLORS[o.status] ?? "#94a3b8"} />)}
                 </Bar>

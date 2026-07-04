@@ -54,7 +54,7 @@ export function HRAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.floor(data.attendanceTrend.length / 8)} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v}%`, "Attendance"]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v}%`, "Attendance"]} />
               <Line type="monotone" dataKey="rate" stroke="#6366f1" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -72,7 +72,7 @@ export function HRAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                 <Bar dataKey="count" name="Employees" fill="#6366f1" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -88,7 +88,7 @@ export function HRAnalytics({ data }: { data: Data }) {
                 <Pie data={data.leaveByType} dataKey="count" nameKey="type" cx="50%" cy="50%" outerRadius={80} label={({ type, percent }) => `${type} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                   {data.leaveByType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -105,7 +105,7 @@ export function HRAnalytics({ data }: { data: Data }) {
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="hours" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="cost" orientation="right" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar yAxisId="hours" dataKey="hours" name="OT Hours" fill="#6366f1" radius={[3, 3, 0, 0]} />
               <Bar yAxisId="cost" dataKey="cost" name="OT Cost ($)" fill="#f59e0b" radius={[3, 3, 0, 0]} />
@@ -123,7 +123,7 @@ export function HRAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, "Leave Days"]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [v, "Leave Days"]} />
               <Bar dataKey="count" name="Leave Taken" fill="#10b981" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

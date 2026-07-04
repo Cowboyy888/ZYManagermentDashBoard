@@ -7,6 +7,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { SkipLink } from "@/components/SkipLink";
 import { LocaleProvider } from "@/lib/i18n/LocaleContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { detectLocale, LOCALE_COOKIE } from "@/lib/i18n/index";
 import { prisma } from "@/lib/db";
 
@@ -42,6 +43,7 @@ export default async function DashLayout({ children }: { children: React.ReactNo
         }}>
           <GlobalSearch />
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <ThemeToggle />
             <LanguageSwitcher />
           <a
             href="/notifications"

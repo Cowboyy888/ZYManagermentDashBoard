@@ -141,7 +141,7 @@ export function MaintenanceDashboard({ summary, canManage: _canManage }: Props) 
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="preventive" name="Preventive" fill="#10b981" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="corrective" name="Corrective / Other" fill="#f59e0b" radius={[2, 2, 0, 0]} />
@@ -161,7 +161,7 @@ export function MaintenanceDashboard({ summary, canManage: _canManage }: Props) 
                     <Cell key={i} fill={MACHINE_COLORS[i % MACHINE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

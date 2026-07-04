@@ -60,7 +60,7 @@ export function QualityAnalytics({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip contentStyle={{ fontSize: 12 }} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="pass" name="Pass" fill={RESULT_COLORS.pass} stackId="a" radius={[0, 0, 0, 0]} />
               <Bar dataKey="rework" name="Rework" fill={RESULT_COLORS.rework} stackId="a" />
@@ -80,7 +80,7 @@ export function QualityAnalytics({ data }: { data: Data }) {
                 <Pie data={data.ncrsBySeverity} dataKey="count" nameKey="severity" cx="50%" cy="50%" outerRadius={70} label={({ severity, count }) => `${severity} (${count})`} labelLine={false}>
                   {data.ncrsBySeverity.map((n) => <Cell key={n.severity} fill={SEV_COLORS[n.severity] ?? "#94a3b8"} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -93,7 +93,7 @@ export function QualityAnalytics({ data }: { data: Data }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="status" tick={{ fontSize: 10 }} width={80} />
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                 <Bar dataKey="count" name="NCRs" fill="#6366f1" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -107,7 +107,7 @@ export function QualityAnalytics({ data }: { data: Data }) {
                 <Pie data={data.inspectionsByType} dataKey="count" nameKey="type" cx="50%" cy="50%" outerRadius={70} label={({ type, count }) => `${count}`} labelLine={false}>
                   {data.inspectionsByType.map((_, i) => <Cell key={i} fill={["#6366f1", "#10b981", "#f59e0b", "#ef4444"][i % 4]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>

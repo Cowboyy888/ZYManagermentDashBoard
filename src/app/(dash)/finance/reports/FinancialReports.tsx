@@ -177,7 +177,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v)]} />
+                  <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v)]} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="totalExpenses" name="Expenses" fill="#ef4444" radius={[2, 2, 0, 0]} />
@@ -193,7 +193,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Net Profit"]} />
+                  <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Net Profit"]} />
                   <Line type="monotone" dataKey="profit" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -250,7 +250,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v)]} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v)]} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Bar dataKey="revenue" name="Cash In" fill="#10b981" radius={[2, 2, 0, 0]} />
                     <Bar dataKey="totalExpenses" name="Cash Out" fill="#ef4444" radius={[2, 2, 0, 0]} />
@@ -266,7 +266,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                     <Pie data={expenseByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                       {expenseByType.map((_, i) => <Cell key={i} fill={["#ef4444", "#f97316", "#f59e0b", "#6366f1", "#10b981", "#a855f7"][i % 6]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v)]} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v)]} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -301,7 +301,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v), "Outstanding"]} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v), "Outstanding"]} />
                     <Bar dataKey="value" name="Outstanding">
                       {arAgingData.map((_, i) => <Cell key={i} fill={AGING_COLORS[i]} />)}
                     </Bar>
@@ -421,7 +421,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                     <Pie data={expenseByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}>
                       {expenseByType.map((_, i) => <Cell key={i} fill={["#ef4444", "#f97316", "#f59e0b", "#6366f1", "#10b981", "#a855f7"][i % 6]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v)]} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v)]} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -435,7 +435,7 @@ export function FinancialReports({ invoices, bills, expenses, payrollRuns, arAgi
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtUsd(v)]} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtUsd(v)]} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Bar dataKey="billExpenses" name="Supplier Bills" fill="#ef4444" radius={[2, 2, 0, 0]} stackId="a" />
                     <Bar dataKey="opExpenses" name="Operational" fill="#f97316" radius={[0, 0, 0, 0]} stackId="a" />

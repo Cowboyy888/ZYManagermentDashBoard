@@ -68,7 +68,7 @@ export function ForecastDashboard({ data }: { data: Data }) {
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="rev" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
               <Tooltip
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }}
                 formatter={(v: number, name: string) => {
                   if (name === "revenue" || name === "Actual Revenue") return [fmtUsd(v), "Revenue"];
                   return [fmtUsd(v), name];
@@ -103,7 +103,7 @@ export function ForecastDashboard({ data }: { data: Data }) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="prod" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}t`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v.toLocaleString()} kg`]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v.toLocaleString()} kg`]} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar yAxisId="prod" dataKey="productionKg" name="Production (kg)" fill="#10b981" radius={[3, 3, 0, 0]} />
             </ComposedChart>

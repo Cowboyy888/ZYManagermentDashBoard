@@ -121,7 +121,7 @@ export function BIDashboard(props: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}t`} />
-              <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v.toLocaleString()} kg`, "Production"]} />
+              <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v.toLocaleString()} kg`, "Production"]} />
               <Bar dataKey="kg" name="Production (kg)" fill="#10b981" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

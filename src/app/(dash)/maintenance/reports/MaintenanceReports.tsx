@@ -188,7 +188,7 @@ export function MaintenanceReports({ workOrders, usages, machines, canExport: _c
                     <Pie data={byType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${value}`}>
                       {byType.map((d, i) => <Cell key={i} fill={TYPE_COLORS[d.name] ?? "#94a3b8"} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -201,7 +201,7 @@ export function MaintenanceReports({ workOrders, usages, machines, canExport: _c
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => fmtCost(v)} />
+                    <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => fmtCost(v)} />
                     <Line type="monotone" dataKey="cost" stroke="#6366f1" strokeWidth={2} name="Cost (USD)" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -284,7 +284,7 @@ export function MaintenanceReports({ workOrders, usages, machines, canExport: _c
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v} min`} />
                   <YAxis type="category" dataKey="machine" tick={{ fontSize: 11 }} width={80} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [`${v} min`, "Downtime"]} />
+                  <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [`${v} min`, "Downtime"]} />
                   <Bar dataKey="minutes" fill="#ef4444" radius={[0, 2, 2, 0]} name="Downtime (min)" />
                 </BarChart>
               </ResponsiveContainer>
@@ -380,7 +380,7 @@ export function MaintenanceReports({ workOrders, usages, machines, canExport: _c
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
                   <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={140} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtCost(v), "Cost"]} />
+                  <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtCost(v), "Cost"]} />
                   <Bar dataKey="cost" fill="#6366f1" radius={[0, 2, 2, 0]} name="Cost (USD)" />
                 </BarChart>
               </ResponsiveContainer>
@@ -454,7 +454,7 @@ export function MaintenanceReports({ workOrders, usages, machines, canExport: _c
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [fmtCost(v), "Total Cost"]} />
+                  <Tooltip contentStyle={{ fontSize: 12, background: "var(--surface)", color: "var(--text)" }} formatter={(v: number) => [fmtCost(v), "Total Cost"]} />
                   <Bar dataKey="cost" fill="#6366f1" radius={[2, 2, 0, 0]} name="Cost (USD)" />
                 </BarChart>
               </ResponsiveContainer>
