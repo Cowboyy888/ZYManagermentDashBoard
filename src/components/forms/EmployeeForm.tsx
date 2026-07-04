@@ -74,20 +74,22 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string | null>(null);
 
   function handlePhotoFile(f: File) {
     if (!PHOTO_ACCEPT.includes(f.type)) {
-      setServerError("Only JPEG, PNG, or WebP images are allowed.");
+      setPhotoError("Only JPEG, PNG, or WebP images are allowed.");
       return;
     }
-    if (f.size > 5 * 1024 * 1024) {
-      setServerError("Photo must be under 5 MB.");
+    if (f.size > 10 * 1024 * 1024) {
+      setPhotoError("Photo must be under 10 MB.");
       return;
     }
-    setServerError(null);
+    setPhotoError(null);
     setPhotoFile(f);
     setPhotoPreview(URL.createObjectURL(f));
     setPhotoRemoved(false);
@@ -125,6 +127,7 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
     e.preventDefault();
     setFieldErrors({});
     setServerError(null);
+    setPhotoError(null);
     const fd = new FormData(e.currentTarget);
 
     const ecName = fd.get("ec_name") as string;
@@ -182,16 +185,26 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
       }
 
       if (photoFile && empId) {
-        const pfd = new FormData();
-        pfd.append("file", photoFile);
-        pfd.append("employeeId", String(empId));
-        const photoRes = await fetch("/api/upload/photo", { method: "POST", body: pfd });
-        const photoJson = await photoRes.json();
-        if (photoJson.url) {
-          await updateEmployeePhoto(empId, photoJson.url);
+        setPhotoUploading(true);
+        try {
+          const pfd = new FormData();
+          pfd.append("file", photoFile);
+          pfd.append("employeeId", String(empId));
+          const photoRes = await fetch("/api/upload/photo", { method: "POST", body: pfd });
+          const photoJson = await photoRes.json() as { ok?: boolean; url?: string; error?: string };
+          if (photoJson.url) {
+            await updateEmployeePhoto(empId, photoJson.url);
+          } else {
+            setPhotoError(`Photo upload failed: ${photoJson.error ?? "Unknown error"}`);
+            // Employee data was saved — still close and refresh so user doesn't lose their work
+          }
+        } catch (uploadErr) {
+          setPhotoError(`Photo upload failed: ${uploadErr instanceof Error ? uploadErr.message : "Network error"}`);
+        } finally {
+          setPhotoUploading(false);
         }
       } else if (photoRemoved && empId && editing) {
-        await updateEmployeePhoto(empId, "");
+        await updateEmployeePhoto(empId, null);
       }
 
       router.refresh();
@@ -222,50 +235,83 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
       )}
 
       {/* Photo — drag-and-drop */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => photoInputRef.current?.click()}
-          style={{
-            width: 90, height: 90, borderRadius: 12,
-            background: dragging ? "var(--steel-light)" : "var(--surface-2)",
-            border: `2px ${dragging ? "solid var(--steel)" : "dashed var(--border)"}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", overflow: "hidden", flexShrink: 0,
-            transition: "border-color 0.15s, background 0.15s",
-          }}
-        >
-          {photoPreview ? (
-            <img src={photoPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
-              <circle cx="12" cy="8" r="3"/><path d="M20 21a8 8 0 0 0-16 0"/>
-            </svg>
-          )}
-        </div>
-        <div style={{ paddingTop: 4 }}>
-          <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Employee Photo</p>
-          <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
-            Drag & drop or click · JPEG / PNG / WebP · max 5 MB
-          </p>
-          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-            <button type="button" onClick={() => photoInputRef.current?.click()}
-              style={{ fontSize: 12, color: "var(--steel)", cursor: "pointer", background: "none", border: "none", padding: 0, fontWeight: 500 }}>
-              {photoPreview ? "Change photo" : "Upload photo"}
-            </button>
-            {photoPreview && (
-              <button type="button" onClick={handleRemovePhoto}
-                style={{ fontSize: 12, color: "var(--red)", cursor: "pointer", background: "none", border: "none", padding: 0 }}>
-                Remove
-              </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+          {/* Drop zone / preview */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => !photoUploading && photoInputRef.current?.click()}
+            style={{
+              width: 90, height: 90, borderRadius: 12, flexShrink: 0,
+              background: dragging ? "var(--steel-light)" : "var(--surface-2)",
+              border: `2px ${dragging ? "solid var(--steel)" : photoError ? "solid var(--red)" : "dashed var(--border)"}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: photoUploading ? "wait" : "pointer", overflow: "hidden",
+              transition: "border-color 0.15s, background 0.15s", position: "relative",
+            }}
+          >
+            {photoUploading ? (
+              <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="var(--steel)" strokeWidth={2}
+                style={{ animation: "spin 0.7s linear infinite" }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            ) : photoPreview ? (
+              <img src={photoPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
             )}
           </div>
+
+          {/* Controls */}
+          <div style={{ paddingTop: 4, flex: 1 }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>Employee Photo</p>
+            <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
+              Drag & drop or click to browse · JPEG / PNG / WebP · max 10 MB
+            </p>
+            <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+              <button type="button" onClick={() => photoInputRef.current?.click()}
+                disabled={photoUploading}
+                style={{ fontSize: 12, color: "var(--steel)", cursor: photoUploading ? "wait" : "pointer", background: "none", border: "none", padding: 0, fontWeight: 500 }}>
+                {photoUploading ? "Uploading…" : photoPreview ? "Change photo" : "Upload photo"}
+              </button>
+              {photoPreview && !photoUploading && (
+                <button type="button" onClick={handleRemovePhoto}
+                  style={{ fontSize: 12, color: "var(--red)", cursor: "pointer", background: "none", border: "none", padding: 0 }}>
+                  Remove
+                </button>
+              )}
+              {photoFile && !photoUploading && (
+                <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                  {photoFile.name} ({(photoFile.size / 1024 / 1024).toFixed(1)} MB)
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp"
-          onChange={handlePhotoChange} style={{ display: "none" }} />
+
+        {/* Photo-specific error */}
+        {photoError && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 12px", borderRadius: 8,
+            background: "var(--red-bg)", color: "var(--red)", fontSize: 12,
+          }}>
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {photoError}
+          </div>
+        )}
       </div>
+      <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+        onChange={handlePhotoChange} style={{ display: "none" }} />
 
       {/* Identity */}
       <Section label="Identity">

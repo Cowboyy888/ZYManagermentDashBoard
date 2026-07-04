@@ -230,10 +230,10 @@ export async function updateEmployee(id: number, raw: unknown): Promise<ActionRe
 
 // ── Update photo ─────────────────────────────────────────────────────────────
 
-export async function updateEmployeePhoto(id: number, photoUrl: string): Promise<ActionResult> {
+export async function updateEmployeePhoto(id: number, photoUrl: string | null): Promise<ActionResult> {
   try {
     await guard("employee.update");
-    await prisma.employee.update({ where: { id }, data: { photoUrl } });
+    await prisma.employee.update({ where: { id }, data: { photoUrl: photoUrl || null } });
     revalidatePath(`/employees/${id}`);
     revalidatePath("/employees");
     return { ok: true, data: undefined };
