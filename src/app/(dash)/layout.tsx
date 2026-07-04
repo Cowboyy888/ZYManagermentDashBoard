@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/session";
 import { Sidebar } from "@/components/Sidebar";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { ToastProvider } from "@/components/ui/Toast";
+import { SkipLink } from "@/components/SkipLink";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -21,21 +22,7 @@ export default async function DashLayout({ children }: { children: React.ReactNo
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
-      {/* Skip-to-content for keyboard and screen-reader users */}
-      <a
-        href="#main-content"
-        style={{
-          position: "absolute", top: -40, left: 0, zIndex: 100,
-          background: "var(--steel)", color: "#fff",
-          padding: "8px 16px", fontSize: 14, fontWeight: 600,
-          textDecoration: "none", borderRadius: "0 0 8px 0",
-          transition: "top 0.1s",
-        }}
-        onFocus={(e) => { (e.currentTarget as HTMLElement).style.top = "0"; }}
-        onBlur={(e) => { (e.currentTarget as HTMLElement).style.top = "-40px"; }}
-      >
-        Skip to content
-      </a>
+      <SkipLink />
       <Sidebar userName={user.name} userRole={user.role} notifications={notifCount} />
       <div style={{ marginLeft: 230, flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* Top bar with global search */}
