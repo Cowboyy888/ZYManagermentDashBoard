@@ -1,0 +1,4 @@
+# ZY Steel HR Dashboard — private internal application.
+# No public pages to index. Crawlers are excluded to protect employee data.
+User-agent: *
+Disallow: /

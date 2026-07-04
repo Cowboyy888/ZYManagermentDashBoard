@@ -3,178 +3,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { ZysteelLogo } from "@/components/ZysteelLogo";
-
-const NAV_SECTIONS = [
-  {
-    label: "Overview",
-    items: [
-      { href: "/",             label: "Dashboard",           icon: GridIcon },
-      { href: "/executive",    label: "Executive Analytics",  icon: BarLineIcon },
-    ],
-  },
-  {
-    label: "People",
-    items: [
-      { href: "/employees",     label: "Employees",      icon: UsersIcon },
-      { href: "/org-chart",     label: "Org Chart",      icon: OrgIcon },
-      { href: "/attendance",    label: "Attendance",     icon: CalendarIcon },
-      { href: "/overtime",      label: "Overtime",       icon: ClockIcon },
-      { href: "/leave",         label: "Leave",          icon: LeaveIcon },
-    ],
-  },
-  {
-    label: "Organisation",
-    items: [
-      { href: "/departments", label: "Departments", icon: DeptIcon },
-      { href: "/positions",   label: "Positions",   icon: PosIcon  },
-    ],
-  },
-  {
-    label: "Production",
-    items: [
-      { href: "/production",             label: "Overview",      icon: BarLineIcon },
-      { href: "/production/orders",      label: "Orders",        icon: ClipboardIcon },
-      { href: "/production/inventory",   label: "Inventory",     icon: BoxIcon },
-      { href: "/production/machines",    label: "Machines",      icon: GearIcon },
-      { href: "/production/maintenance", label: "Maintenance",   icon: WrenchIcon },
-      { href: "/production/quality",     label: "Quality",       icon: ShieldCheckIcon },
-      { href: "/production/reports",     label: "Daily Reports", icon: ChartIcon },
-    ],
-  },
-  {
-    label: "Inventory",
-    items: [
-      { href: "/inventory",              label: "Overview",      icon: BoxIcon },
-      { href: "/inventory/items",        label: "Items",         icon: ClipboardIcon },
-      { href: "/inventory/warehouses",   label: "Warehouses",    icon: BuildingIcon },
-      { href: "/inventory/transactions", label: "Transactions",  icon: TruckIcon },
-      { href: "/inventory/reports",      label: "Reports",       icon: ChartIcon },
-    ],
-  },
-  {
-    label: "Purchasing",
-    items: [
-      { href: "/purchasing",              label: "Overview",      icon: ShoppingCartIcon },
-      { href: "/purchasing/suppliers",    label: "Suppliers",     icon: BuildingIcon },
-      { href: "/purchasing/requisitions", label: "Requisitions",  icon: ClipboardIcon },
-      { href: "/purchasing/orders",       label: "Orders",        icon: BoxIcon },
-      { href: "/purchasing/receipts",     label: "Receiving",     icon: TruckIcon },
-      { href: "/purchasing/reports",      label: "Reports",       icon: ChartIcon },
-    ],
-  },
-  {
-    label: "Sales & CRM",
-    items: [
-      { href: "/sales",              label: "Overview",      icon: TagIcon },
-      { href: "/sales/customers",    label: "Customers",     icon: UsersIcon },
-      { href: "/sales/leads",        label: "Leads",         icon: FunnelIcon },
-      { href: "/sales/quotations",   label: "Quotations",    icon: ClipboardIcon },
-      { href: "/sales/orders",       label: "Orders",        icon: BoxIcon },
-      { href: "/sales/deliveries",   label: "Deliveries",    icon: TruckIcon },
-      { href: "/sales/reports",      label: "Reports",       icon: ChartIcon },
-    ],
-  },
-  {
-    label: "Quality & QMS",
-    items: [
-      { href: "/quality",              label: "Overview",     icon: ShieldCheckIcon },
-      { href: "/quality/inspections",  label: "Inspections",  icon: ClipboardIcon },
-      { href: "/quality/ncr",          label: "NCR",          icon: AlertIcon },
-      { href: "/quality/capa",         label: "CAPA",         icon: CheckSquareIcon },
-      { href: "/quality/certificates", label: "Certificates", icon: BadgeIcon },
-      { href: "/quality/reports",      label: "Reports",      icon: ChartIcon },
-    ],
-  },
-  {
-    label: "Maintenance (CMMS)",
-    items: [
-      { href: "/maintenance",             label: "Overview",      icon: WrenchIcon },
-      { href: "/maintenance/assets",      label: "Assets",        icon: GearIcon },
-      { href: "/maintenance/work-orders", label: "Work Orders",   icon: ClipboardIcon },
-      { href: "/maintenance/schedules",   label: "PM Schedules",  icon: CalendarIcon },
-      { href: "/maintenance/spare-parts", label: "Spare Parts",   icon: BoxIcon },
-      { href: "/maintenance/reports",     label: "Reports",       icon: ChartIcon },
-    ],
-  },
-  {
-    label: "Finance & Accounting",
-    items: [
-      { href: "/finance",           label: "Overview",   icon: FinanceIcon },
-      { href: "/finance/invoices",  label: "Invoices",   icon: ClipboardIcon },
-      { href: "/finance/bills",     label: "Bills",      icon: TruckIcon },
-      { href: "/finance/payments",  label: "Payments",   icon: CashIcon },
-      { href: "/finance/expenses",  label: "Expenses",   icon: TagIcon },
-      { href: "/finance/reports",   label: "Reports",    icon: ChartIcon },
-    ],
-  },
-  {
-    label: "BI & Analytics",
-    items: [
-      { href: "/bi",              label: "CEO Dashboard",  icon: BarLineIcon },
-      { href: "/bi/hr",           label: "HR Analytics",   icon: UsersIcon },
-      { href: "/bi/production",   label: "Production",     icon: GearIcon },
-      { href: "/bi/sales",        label: "Sales",          icon: ShoppingCartIcon },
-      { href: "/bi/finance",      label: "Finance",        icon: FinanceIcon },
-      { href: "/bi/quality",      label: "Quality",        icon: ShieldCheckIcon },
-      { href: "/bi/maintenance",  label: "Maintenance",    icon: WrenchIcon },
-      { href: "/bi/inventory",    label: "Inventory",      icon: BoxIcon },
-      { href: "/bi/purchasing",   label: "Purchasing",     icon: TruckIcon },
-      { href: "/bi/forecast",     label: "Forecast",       icon: ChartIcon },
-      { href: "/bi/alerts",       label: "Alerts",         icon: AlertIcon },
-    ],
-  },
-  {
-    label: "Smart Factory",
-    items: [
-      { href: "/factory",              label: "Overview",      icon: ChartIcon },
-      { href: "/factory/machines",     label: "Machines",      icon: GearIcon },
-      { href: "/factory/alarms",       label: "Alarms",        icon: AlertIcon },
-      { href: "/factory/oee",          label: "OEE",           icon: ChartIcon },
-      { href: "/factory/shifts",       label: "Shifts",        icon: ClockIcon },
-      { href: "/factory/iot",          label: "IoT Devices",   icon: GlobeIcon },
-      { href: "/factory-areas",        label: "Factory Areas", icon: BuildingIcon },
-    ],
-  },
-  {
-    label: "Money",
-    items: [
-      { href: "/payroll",       label: "Payroll",        icon: CashIcon },
-    ],
-  },
-  {
-    label: "Portal",
-    items: [
-      { href: "/portal",                    label: "Overview",     icon: GlobeIcon },
-      { href: "/portal/customers",          label: "Customers",    icon: UsersIcon },
-      { href: "/portal/suppliers",          label: "Suppliers",    icon: BuildingIcon },
-      { href: "/portal/tickets",            label: "Tickets",      icon: ClipboardIcon },
-      { href: "/portal/announcements",      label: "Announcements", icon: BellIcon },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { href: "/admin/users",   label: "Users",         icon: KeyIcon },
-      { href: "/admin/audit",   label: "Audit Log",     icon: ClipboardIcon },
-      { href: "/admin/health",  label: "System Health", icon: HeartPulseIcon },
-      { href: "/admin/import",  label: "Data Import",   icon: ClipboardIcon },
-    ],
-  },
-  {
-    label: "AI & Automation",
-    items: [
-      { href: "/ai/hr",         label: "HR Assistant",        icon: SparkleIcon },
-      { href: "/ai/production", label: "Production AI",       icon: SparkleIcon },
-      { href: "/ai/sales",      label: "Sales AI",            icon: SparkleIcon },
-    ],
-  },
-  {
-    label: "Alerts",
-    items: [
-      { href: "/notifications", label: "Notifications", icon: BellIcon },
-    ],
-  },
-];
+import { useTranslations } from "@/lib/i18n/useTranslations";
+import * as enNav from "@/locales/en/nav";
+import * as zhNav from "@/locales/zh-CN/nav";
 
 export function Sidebar({
   userName,
@@ -187,6 +18,128 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations(enNav.nav, zhNav.nav);
+
+  const NAV_SECTIONS = [
+    { labelKey: "sectionOverview" as const, items: [
+      { href: "/",          labelKey: "dashboard" as const,          icon: GridIcon },
+      { href: "/executive", labelKey: "executiveAnalytics" as const,  icon: BarLineIcon },
+    ]},
+    { labelKey: "sectionPeople" as const, items: [
+      { href: "/employees",  labelKey: "employees" as const,  icon: UsersIcon },
+      { href: "/org-chart",  labelKey: "orgChart" as const,   icon: OrgIcon },
+      { href: "/attendance", labelKey: "attendance" as const, icon: CalendarIcon },
+      { href: "/overtime",   labelKey: "overtime" as const,   icon: ClockIcon },
+      { href: "/leave",      labelKey: "leave" as const,      icon: LeaveIcon },
+    ]},
+    { labelKey: "sectionOrganisation" as const, items: [
+      { href: "/departments", labelKey: "departments" as const, icon: DeptIcon },
+      { href: "/positions",   labelKey: "positions" as const,   icon: PosIcon  },
+    ]},
+    { labelKey: "sectionProduction" as const, items: [
+      { href: "/production",             labelKey: "overview" as const,       icon: BarLineIcon },
+      { href: "/production/orders",      labelKey: "productionOrders" as const, icon: ClipboardIcon },
+      { href: "/production/inventory",   labelKey: "inventory" as const,      icon: BoxIcon },
+      { href: "/production/machines",    labelKey: "machines" as const,       icon: GearIcon },
+      { href: "/production/maintenance", labelKey: "maintenance" as const,    icon: WrenchIcon },
+      { href: "/production/quality",     labelKey: "quality" as const,        icon: ShieldCheckIcon },
+      { href: "/production/reports",     labelKey: "dailyReports" as const,   icon: ChartIcon },
+    ]},
+    { labelKey: "sectionInventory" as const, items: [
+      { href: "/inventory",              labelKey: "overview" as const,      icon: BoxIcon },
+      { href: "/inventory/items",        labelKey: "items" as const,         icon: ClipboardIcon },
+      { href: "/inventory/warehouses",   labelKey: "warehouses" as const,    icon: BuildingIcon },
+      { href: "/inventory/transactions", labelKey: "transactions" as const,  icon: TruckIcon },
+      { href: "/inventory/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
+    ]},
+    { labelKey: "sectionPurchasing" as const, items: [
+      { href: "/purchasing",              labelKey: "overview" as const,         icon: ShoppingCartIcon },
+      { href: "/purchasing/suppliers",    labelKey: "suppliers" as const,        icon: BuildingIcon },
+      { href: "/purchasing/requisitions", labelKey: "requisitions" as const,     icon: ClipboardIcon },
+      { href: "/purchasing/orders",       labelKey: "purchaseOrders" as const,   icon: BoxIcon },
+      { href: "/purchasing/receipts",     labelKey: "receiving" as const,        icon: TruckIcon },
+      { href: "/purchasing/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
+    ]},
+    { labelKey: "sectionSales" as const, items: [
+      { href: "/sales",            labelKey: "overview" as const,          icon: TagIcon },
+      { href: "/sales/customers",  labelKey: "customers" as const,         icon: UsersIcon },
+      { href: "/sales/leads",      labelKey: "leads" as const,             icon: FunnelIcon },
+      { href: "/sales/quotations", labelKey: "quotations" as const,        icon: ClipboardIcon },
+      { href: "/sales/orders",     labelKey: "salesOrders" as const,       icon: BoxIcon },
+      { href: "/sales/deliveries", labelKey: "deliveries" as const,        icon: TruckIcon },
+      { href: "/sales/reports",    labelKey: "financialReports" as const,  icon: ChartIcon },
+    ]},
+    { labelKey: "sectionQuality" as const, items: [
+      { href: "/quality",              labelKey: "overview" as const,      icon: ShieldCheckIcon },
+      { href: "/quality/inspections",  labelKey: "inspections" as const,   icon: ClipboardIcon },
+      { href: "/quality/ncr",          labelKey: "ncr" as const,           icon: AlertIcon },
+      { href: "/quality/capa",         labelKey: "capa" as const,          icon: CheckSquareIcon },
+      { href: "/quality/certificates", labelKey: "certificates" as const,  icon: BadgeIcon },
+      { href: "/quality/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
+    ]},
+    { labelKey: "sectionMaintenance" as const, items: [
+      { href: "/maintenance",             labelKey: "overview" as const,         icon: WrenchIcon },
+      { href: "/maintenance/assets",      labelKey: "assets" as const,           icon: GearIcon },
+      { href: "/maintenance/work-orders", labelKey: "workOrders" as const,       icon: ClipboardIcon },
+      { href: "/maintenance/schedules",   labelKey: "pmSchedules" as const,      icon: CalendarIcon },
+      { href: "/maintenance/spare-parts", labelKey: "spareParts" as const,       icon: BoxIcon },
+      { href: "/maintenance/reports",     labelKey: "financialReports" as const, icon: ChartIcon },
+    ]},
+    { labelKey: "sectionFinance" as const, items: [
+      { href: "/finance",          labelKey: "overview" as const,          icon: FinanceIcon },
+      { href: "/finance/invoices", labelKey: "invoices" as const,          icon: ClipboardIcon },
+      { href: "/finance/bills",    labelKey: "bills" as const,             icon: TruckIcon },
+      { href: "/finance/payments", labelKey: "payments" as const,          icon: CashIcon },
+      { href: "/finance/expenses", labelKey: "expenses" as const,          icon: TagIcon },
+      { href: "/finance/reports",  labelKey: "financialReports" as const,  icon: ChartIcon },
+    ]},
+    { labelKey: "sectionBI" as const, items: [
+      { href: "/bi",             labelKey: "ceoDashboard" as const,         icon: BarLineIcon },
+      { href: "/bi/hr",          labelKey: "hrAnalytics" as const,          icon: UsersIcon },
+      { href: "/bi/production",  labelKey: "productionAnalytics" as const,  icon: GearIcon },
+      { href: "/bi/sales",       labelKey: "salesAnalytics" as const,       icon: ShoppingCartIcon },
+      { href: "/bi/finance",     labelKey: "financeAnalytics" as const,     icon: FinanceIcon },
+      { href: "/bi/quality",     labelKey: "qualityAnalytics" as const,     icon: ShieldCheckIcon },
+      { href: "/bi/maintenance", labelKey: "maintenanceAnalytics" as const, icon: WrenchIcon },
+      { href: "/bi/inventory",   labelKey: "inventoryAnalytics" as const,   icon: BoxIcon },
+      { href: "/bi/purchasing",  labelKey: "purchasingAnalytics" as const,  icon: TruckIcon },
+      { href: "/bi/forecast",    labelKey: "forecast" as const,             icon: ChartIcon },
+      { href: "/bi/alerts",      labelKey: "alerts" as const,               icon: AlertIcon },
+    ]},
+    { labelKey: "sectionSmartFactory" as const, items: [
+      { href: "/factory",         labelKey: "overview" as const,     icon: ChartIcon },
+      { href: "/factory/machines",labelKey: "machines" as const,     icon: GearIcon },
+      { href: "/factory/alarms",  labelKey: "alarms" as const,       icon: AlertIcon },
+      { href: "/factory/oee",     labelKey: "oee" as const,          icon: ChartIcon },
+      { href: "/factory/shifts",  labelKey: "shifts" as const,       icon: ClockIcon },
+      { href: "/factory/iot",     labelKey: "iotDevices" as const,   icon: GlobeIcon },
+      { href: "/factory-areas",   labelKey: "factoryAreas" as const, icon: BuildingIcon },
+    ]},
+    { labelKey: "sectionPayroll" as const, items: [
+      { href: "/payroll", labelKey: "payroll" as const, icon: CashIcon },
+    ]},
+    { labelKey: "sectionPortal" as const, items: [
+      { href: "/portal",                labelKey: "overview" as const,       icon: GlobeIcon },
+      { href: "/portal/customers",      labelKey: "customers" as const,      icon: UsersIcon },
+      { href: "/portal/suppliers",      labelKey: "suppliers" as const,      icon: BuildingIcon },
+      { href: "/portal/tickets",        labelKey: "ai" as const,             icon: ClipboardIcon },
+      { href: "/portal/announcements",  labelKey: "notifications" as const,  icon: BellIcon },
+    ]},
+    { labelKey: "sectionAdmin" as const, items: [
+      { href: "/admin/users",  labelKey: "users" as const,         icon: KeyIcon },
+      { href: "/admin/audit",  labelKey: "auditLog" as const,      icon: ClipboardIcon },
+      { href: "/admin/health", labelKey: "systemHealth" as const,  icon: HeartPulseIcon },
+      { href: "/admin/import", labelKey: "dataImport" as const,    icon: ClipboardIcon },
+    ]},
+    { labelKey: "sectionAI" as const, items: [
+      { href: "/ai/hr",         labelKey: "hrAssistant" as const,   icon: SparkleIcon },
+      { href: "/ai/production", labelKey: "productionAI" as const,  icon: SparkleIcon },
+      { href: "/ai/sales",      labelKey: "salesAI" as const,       icon: SparkleIcon },
+    ]},
+    { labelKey: "sectionAlerts" as const, items: [
+      { href: "/notifications", labelKey: "notifications" as const, icon: BellIcon },
+    ]},
+  ];
 
   async function signOut() {
     await authClient.signOut();
@@ -228,7 +181,7 @@ export function Sidebar({
       {/* Navigation */}
       <nav aria-label="Main navigation" className="flex-1 overflow-y-auto p-2 space-y-0">
         {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
+          <div key={section.labelKey}>
             <div
               style={{
                 fontSize: 11,
@@ -239,9 +192,9 @@ export function Sidebar({
                 fontWeight: 600,
               }}
             >
-              {section.label}
+              {t[section.labelKey]}
             </div>
-            {section.items.map(({ href, label, icon: Icon }) => {
+            {section.items.map(({ href, labelKey, icon: Icon }) => {
               const active = isActive(href);
               const showBadge = href === "/notifications" && notifications > 0;
               return (
@@ -265,7 +218,7 @@ export function Sidebar({
                   className={!active ? "hover-nav-item" : ""}
                 >
                   <Icon size={17} />
-                  <span className="flex-1">{label}</span>
+                  <span className="flex-1">{t[labelKey]}</span>
                   {showBadge && (
                     <span
                       style={{
@@ -333,7 +286,7 @@ export function Sidebar({
           }}
           className="hover-sign-out"
         >
-          Sign out
+          {t.signOut}
         </button>
       </div>
 

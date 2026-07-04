@@ -408,6 +408,7 @@ model PayPeriod {
   adjustments PayrollAdjustment[]
 
   @@unique([year, month, half])
+  @@index([year, month])                     // dashboard: latest period lookup
   @@index([payrollDate])       // payroll-reminder cron
 }
 
@@ -458,6 +459,7 @@ model Payslip {
 
   @@unique([periodId, employeeId])           // one payslip per person per period
   @@index([employeeId])
+  @@index([periodId, finalized])             // dashboard: count finalized payslips per period
 }
 
 // Per-employee bonus/deduction overrides before a payroll run.

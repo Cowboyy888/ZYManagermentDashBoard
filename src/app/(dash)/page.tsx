@@ -27,33 +27,33 @@ export default async function DashboardPage() {
     onLeaveTodayCount,
     hiringByMonth,
   ] = await Promise.all([
-    prisma.employee.count({ where: { status: "ACTIVE" } }),
+    prisma.employee.count({ where: { status: "ACTIVE" } }).catch(() => 0),
 
     prisma.department.findMany({
       include: { _count: { select: { employees: { where: { status: "ACTIVE" } } } } },
       orderBy: { name: "asc" },
-    }),
+    }).catch(() => []),
 
     prisma.payPeriod.findFirst({
       orderBy: [{ year: "desc" }, { month: "desc" }, { half: "desc" }],
       select: { id: true, year: true, month: true, half: true, locked: true, name: true, payrollDate: true, endDate: true },
-    }),
+    }).catch(() => null),
 
     prisma.overtimeEntry.findMany({
       take: 8,
       orderBy: { date: "desc" },
       include: { employee: { select: { nameEn: true, nameKh: true } } },
-    }),
+    }).catch(() => []),
 
     // Contracts expiring in 30 days
     prisma.employee.count({
       where: { status: "ACTIVE", contractExpiry: { not: null, lte: in30, gte: today } },
-    }),
+    }).catch(() => 0),
 
     // Contracts expiring in 7 days (urgent)
     prisma.employee.count({
       where: { status: "ACTIVE", contractExpiry: { not: null, lte: in7, gte: today } },
-    }),
+    }).catch(() => 0),
 
     // Today's birthdays (same month + day)
     prisma.employee.findMany({
@@ -66,7 +66,7 @@ export default async function DashboardPage() {
       if (!e.birthday) return false;
       const b = new Date(e.birthday);
       return b.getMonth() === today.getMonth() && b.getDate() === today.getDate();
-    })),
+    })).catch(() => []),
 
     // Attendance summary for today
     prisma.attendanceDay.groupBy({
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
         if (k in counts) counts[k]++;
       });
       return Object.entries(counts).map(([month, count]) => ({ month, count }));
-    }),
+    }).catch(() => [] as { month: string; count: number }[]),
   ]);
 
   const [periodPayslips, periodFinalized] = latestPeriod
@@ -127,8 +127,8 @@ export default async function DashboardPage() {
           where: { periodId: latestPeriod.id },
           _sum: { grossUsd: true, netUsd: true },
           _count: true,
-        }),
-        prisma.payslip.count({ where: { periodId: latestPeriod.id, finalized: true } }),
+        }).catch(() => null),
+        prisma.payslip.count({ where: { periodId: latestPeriod.id, finalized: true } }).catch(() => 0),
       ])
     : [null, 0];
 

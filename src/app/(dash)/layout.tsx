@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth/session";
 import { Sidebar } from "@/components/Sidebar";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { ToastProvider } from "@/components/ui/Toast";
 import { SkipLink } from "@/components/SkipLink";
+import { LocaleProvider } from "@/lib/i18n/LocaleContext";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { detectLocale, LOCALE_COOKIE } from "@/lib/i18n/index";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -19,8 +23,11 @@ async function getNotificationCount(userId: string): Promise<number> {
 export default async function DashLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
   const notifCount = await getNotificationCount(user.id);
+  const cookieStore = await cookies();
+  const initialLocale = detectLocale(cookieStore.get(LOCALE_COOKIE)?.value);
 
   return (
+    <LocaleProvider initialLocale={initialLocale}>
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
       <SkipLink />
       <Sidebar userName={user.name} userRole={user.role} notifications={notifCount} />
@@ -34,6 +41,8 @@ export default async function DashLayout({ children }: { children: React.ReactNo
           borderBottom: "1px solid var(--border)",
         }}>
           <GlobalSearch />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <LanguageSwitcher />
           <a
             href="/notifications"
             aria-label={`${notifCount} unread notification${notifCount !== 1 ? "s" : ""}`}
@@ -60,11 +69,13 @@ export default async function DashLayout({ children }: { children: React.ReactNo
               </span>
             )}
           </a>
+          </div>
         </header>
         <main id="main-content" style={{ flex: 1 }}>
           <ToastProvider>{children}</ToastProvider>
         </main>
       </div>
     </div>
+    </LocaleProvider>
   );
 }
