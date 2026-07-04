@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest run",
+    "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed"
   },
