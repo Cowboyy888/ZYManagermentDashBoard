@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth/config";
 
-// Middleware enforces authentication before this handler runs.
-// This proxy exists solely to serve private Vercel Blob photos to authenticated clients.
+// Middleware bypasses this route — auth is enforced here via Better Auth.
 const BLOB_HOST_SUFFIX = ".blob.vercel-storage.com";
 
 export async function GET(req: NextRequest) {
   try {
+    // Auth check — middleware doesn't guard this route, so we validate here
+    const session = await auth.api.getSession({ headers: req.headers });
+    if (!session?.user) {
+      console.warn("[employee-photo] 401 — no session");
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     const rawUrl = req.nextUrl.searchParams.get("url");
     if (!rawUrl) return new NextResponse("Missing url param", { status: 400 });
 
