@@ -2,6 +2,7 @@
 import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createEmployee, updateEmployee, updateEmployeePhoto } from "@/actions/employees";
+import { useToast } from "@/components/ui/Toast";
 
 interface SelectOption { id: number; name: string }
 interface PositionOption { id: number; name: string; level: number }
@@ -69,6 +70,7 @@ const PHOTO_ACCEPT = ["image/jpeg", "image/png", "image/webp"];
 
 export function EmployeeForm({ departments, positions, factoryAreas, supervisors, editing, onDone }: Props) {
   const router = useRouter();
+  const { error: toastError } = useToast();
   const [pending, startTransition] = useTransition();
   const [photoPreview, setPhotoPreview] = useState<string | null>(editing?.photoUrl ?? null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -76,6 +78,8 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
   const [dragging, setDragging] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  // Track id of employee saved this session — prevents duplicate creation on photo-retry
+  const [savedEmpId, setSavedEmpId] = useState<number | undefined>(editing?.id);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -165,23 +169,29 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
     };
 
     startTransition(async () => {
-      let empId: number | undefined = editing?.id;
+      // Determine if this is a new employee or an existing / previously-saved one
+      let empId: number | undefined = savedEmpId ?? editing?.id;
 
-      if (editing) {
-        const res = await updateEmployee(editing.id, payload);
+      if (empId) {
+        // Update existing (or already-created-this-session) employee
+        const res = await updateEmployee(empId, payload);
         if ("error" in res) {
           setServerError(res.error);
           setFieldErrors((res as { ok: false; error: string; fieldErrors?: Record<string, string[]> }).fieldErrors ?? {});
           return;
         }
       } else {
+        // Create new employee
         const res = await createEmployee(payload);
         if ("error" in res) {
           setServerError(res.error);
           setFieldErrors((res as { ok: false; error: string; fieldErrors?: Record<string, string[]> }).fieldErrors ?? {});
           return;
         }
-        if (res.ok) empId = res.data.id;
+        if (res.ok) {
+          empId = res.data.id;
+          setSavedEmpId(empId); // Remember so retry doesn't duplicate
+        }
       }
 
       if (photoFile && empId) {
@@ -195,15 +205,23 @@ export function EmployeeForm({ departments, positions, factoryAreas, supervisors
           if (photoJson.url) {
             await updateEmployeePhoto(empId, photoJson.url);
           } else {
-            setPhotoError(`Photo upload failed: ${photoJson.error ?? "Unknown error"}`);
-            // Employee data was saved — still close and refresh so user doesn't lose their work
+            // Show error inline — keep form open so user can retry photo without losing data
+            const errMsg = photoJson.error ?? "Unknown error";
+            setPhotoError(`Upload failed: ${errMsg}. Employee data was saved — fix the photo and click Save again.`);
+            toastError("Photo upload failed", errMsg);
+            router.refresh();
+            return; // Don't close form — let user retry
           }
         } catch (uploadErr) {
-          setPhotoError(`Photo upload failed: ${uploadErr instanceof Error ? uploadErr.message : "Network error"}`);
+          const errMsg = uploadErr instanceof Error ? uploadErr.message : "Network error";
+          setPhotoError(`Upload failed: ${errMsg}. Employee data was saved — fix the photo and click Save again.`);
+          toastError("Photo upload failed", errMsg);
+          router.refresh();
+          return;
         } finally {
           setPhotoUploading(false);
         }
-      } else if (photoRemoved && empId && editing) {
+      } else if (photoRemoved && empId) {
         await updateEmployeePhoto(empId, null);
       }
 

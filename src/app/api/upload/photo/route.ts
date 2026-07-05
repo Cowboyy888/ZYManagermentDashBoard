@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { requireUser } from "@/lib/auth/session";
+import { getSessionUser } from "@/lib/auth/session";
 import { can } from "@/lib/rbac";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+// image/jpg is non-standard but some browsers/devices send it
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
 // Magic byte signatures — validate actual file content, not just content-type header
 const MAGIC_SIGNATURES = [
@@ -33,9 +34,13 @@ function safeFilename(employeeId: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireUser();
+    // Use getSessionUser (not requireUser) — redirect() inside try/catch causes 500 in route handlers
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
     if (!can(user.role, "employee.update")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden — your role cannot update employees" }, { status: 403 });
     }
 
     const formData = await req.formData();
@@ -58,6 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    console.log(`[photo-upload] user=${user.id} role=${user.role} empId=${employeeIdRaw} type=${file.type} size=${buffer.length} blobToken=${!!process.env.BLOB_READ_WRITE_TOKEN}`);
 
     // Validate file size
     if (buffer.length > MAX_SIZE) {
