@@ -86,10 +86,10 @@ export async function POST(req: NextRequest) {
     let url: string;
 
     if (process.env.BLOB_READ_WRITE_TOKEN) {
-      // Production path: Vercel Blob (requires BLOB_READ_WRITE_TOKEN in env)
+      // Production path: Vercel Blob (private store — served via /api/employee-photo proxy)
       const { put } = await import("@vercel/blob");
       const blob = await put(`employees/${filename}`, optimized, {
-        access: "public",
+        access: "private",
         contentType: "image/jpeg",
       });
       url = blob.url;

@@ -1,7 +1,10 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+const BLOB_SUFFIX = ".blob.vercel-storage.com";
+function resolvePhotoUrl(url: string) {
+  return url.includes(BLOB_SUFFIX) ? `/api/employee-photo?url=${encodeURIComponent(url)}` : url;
+}
 import { QRCodeSVG } from "qrcode.react";
 import { EmployeeForm } from "@/components/forms/EmployeeForm";
 import { updateEmployeePhoto } from "@/actions/employees";
@@ -155,13 +158,13 @@ export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, d
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {emp.photoUrl ? (
-              <Image
-                src={emp.photoUrl}
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={resolvePhotoUrl(emp.photoUrl)}
                 alt={emp.nameEn}
                 width={100}
                 height={100}
-                priority
-                style={{ objectFit: "cover", display: "block" }}
+                style={{ objectFit: "cover", display: "block", width: 100, height: 100 }}
               />
             ) : (
               <svg aria-hidden="true" width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={1.5}>
