@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
 
+// Middleware enforces authentication before this handler runs.
+// This proxy exists solely to serve private Vercel Blob photos to authenticated clients.
 const BLOB_HOST_SUFFIX = ".blob.vercel-storage.com";
 
 export async function GET(req: NextRequest) {
   try {
-    // Use req.headers directly — avoids next/headers() issues inside image-load Route Handlers
-    const session = await auth.api.getSession({ headers: req.headers });
-    if (!session?.user) {
-      console.warn("[employee-photo] 401 — no valid session");
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const rawUrl = req.nextUrl.searchParams.get("url");
     if (!rawUrl) return new NextResponse("Missing url param", { status: 400 });
 
@@ -21,6 +15,8 @@ export async function GET(req: NextRequest) {
     } catch {
       return new NextResponse("Invalid URL", { status: 400 });
     }
+
+    // SSRF guard — only allow Vercel Blob URLs (covers *.public.blob.*, *.private.blob.*, etc.)
     if (!parsed.hostname.endsWith(BLOB_HOST_SUFFIX)) {
       return new NextResponse("URL not allowed", { status: 403 });
     }
@@ -31,33 +27,39 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Storage not configured", { status: 503 });
     }
 
-    console.log(`[employee-photo] user=${session.user.id} fetching ${rawUrl.slice(0, 80)}`);
+    console.log(`[employee-photo] fetching ${rawUrl.slice(0, 80)}`);
 
-    const upstream = await fetch(rawUrl, {
-      headers: { authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
+    // Use the official @vercel/blob SDK to read private blobs — raw fetch with
+    // Authorization header does not work for private store URLs.
+    const { get } = await import("@vercel/blob");
+    const result = await get(rawUrl, { access: "private", token });
 
-    console.log(`[employee-photo] blob status=${upstream.status} type=${upstream.headers.get("content-type")}`);
-
-    if (!upstream.ok) {
-      console.error(`[employee-photo] blob fetch failed: ${upstream.status} ${upstream.statusText}`);
-      return new NextResponse("Photo not found", { status: upstream.status });
+    if (!result || !result.stream) {
+      console.error(`[employee-photo] blob not found or empty: ${rawUrl.slice(0, 80)}`);
+      return new NextResponse("Photo not found", { status: 404 });
     }
 
-    // Buffer to avoid ReadableStream piping issues in serverless functions
-    const data = await upstream.arrayBuffer();
-    const contentType = upstream.headers.get("content-type") ?? "image/jpeg";
+    console.log(`[employee-photo] blob found, contentType=${result.blob.contentType}`);
 
-    return new NextResponse(data, {
+    // Collect the ReadableStream into a Buffer
+    const reader = result.stream.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    const buffer = Buffer.concat(chunks);
+
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": result.blob.contentType ?? "image/jpeg",
         "Cache-Control": "private, max-age=86400, stale-while-revalidate=3600",
       },
     });
   } catch (err) {
-    console.error("[employee-photo] unexpected error:", err);
+    console.error("[employee-photo] error:", err);
     return new NextResponse("Internal server error", { status: 500 });
   }
 }
