@@ -67,12 +67,19 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 const PHOTO_ACCEPT = ["image/jpeg", "image/png", "image/webp"];
+const BLOB_SUFFIX = ".blob.vercel-storage.com";
+
+function resolvePreviewUrl(url: string | null): string | null {
+  if (!url) return null;
+  if (url.includes(BLOB_SUFFIX)) return `/api/employee-photo?url=${encodeURIComponent(url)}`;
+  return url;
+}
 
 export function EmployeeForm({ departments, positions, factoryAreas, supervisors, editing, onDone }: Props) {
   const router = useRouter();
   const { error: toastError } = useToast();
   const [pending, startTransition] = useTransition();
-  const [photoPreview, setPhotoPreview] = useState<string | null>(editing?.photoUrl ?? null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(resolvePreviewUrl(editing?.photoUrl ?? null));
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [dragging, setDragging] = useState(false);

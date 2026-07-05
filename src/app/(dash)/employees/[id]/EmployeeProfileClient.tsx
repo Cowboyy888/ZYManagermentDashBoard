@@ -86,11 +86,15 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
+
 export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, departments, supervisors }: Props) {
   const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const [showDocUpload, setShowDocUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"info" | "attendance" | "overtime" | "documents">("info");
 
   const daysToExpiry = daysUntil(emp.contractExpiry);
@@ -99,17 +103,38 @@ export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, d
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("file", f);
-    fd.append("employeeId", String(emp.id));
-    const res = await fetch("/api/upload/photo", { method: "POST", body: fd });
-    const json = await res.json();
-    if (json.url) {
-      await updateEmployeePhoto(emp.id, json.url);
-      router.refresh();
+    setPhotoError(null);
+    if (!ALLOWED_PHOTO_TYPES.includes(f.type)) {
+      setPhotoError("Only JPEG, PNG, or WebP images are allowed.");
+      return;
     }
-    setUploading(false);
+    if (f.size > MAX_PHOTO_SIZE) {
+      setPhotoError("Photo must be under 10 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      fd.append("employeeId", String(emp.id));
+      const res = await fetch("/api/upload/photo", { method: "POST", body: fd });
+      let json: { ok?: boolean; url?: string; error?: string };
+      try {
+        json = await res.json();
+      } catch {
+        throw new Error(`Server error (${res.status})`);
+      }
+      if (json.url) {
+        await updateEmployeePhoto(emp.id, json.url);
+        router.refresh();
+      } else {
+        setPhotoError(json.error ?? "Upload failed — please try again.");
+      }
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Upload failed — please try again.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleDocUpload(e: React.FormEvent<HTMLFormElement>) {
@@ -182,8 +207,19 @@ export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, d
               <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}>
                 <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
               </svg>
-              <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: "none" }} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} style={{ display: "none" }} />
             </label>
+          )}
+          {photoError && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 6px)", left: "50%",
+              transform: "translateX(-50%)",
+              padding: "5px 8px", borderRadius: 6, zIndex: 10,
+              background: "var(--red-bg)", color: "var(--red)", fontSize: 11,
+              whiteSpace: "nowrap",
+            }}>
+              {photoError}
+            </div>
           )}
         </div>
 
