@@ -190,9 +190,17 @@ export function EmployeeProfileClient({ emp, canEdit, positions, factoryAreas, d
                 width={100}
                 height={100}
                 style={{ objectFit: "cover", display: "block", width: 100, height: 100 }}
-                onError={(e) => {
+                onError={async (e) => {
                   const img = e.currentTarget;
                   console.error("[photo] load failed:", img.src, "| stored photoUrl:", emp.photoUrl);
+                  try {
+                    const r = await fetch(img.src, { credentials: "include" });
+                    console.error("[photo] proxy HTTP status:", r.status, r.statusText);
+                    const body = await r.text();
+                    console.error("[photo] proxy response body:", body.slice(0, 200));
+                  } catch (err) {
+                    console.error("[photo] fetch error:", err);
+                  }
                 }}
               />
             ) : (
