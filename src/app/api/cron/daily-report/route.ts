@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyCronSecret } from "@/lib/cron";
 import { prisma } from "@/lib/db";
 import { sendTelegramMessage } from "@/lib/telegram";
+import { startOfTodayICT, nowICT } from "@/lib/utils/date";
 
 export const maxDuration = 30;
 
@@ -12,9 +13,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const today = new Date();
-    const startOfDay = new Date(today.toDateString());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfDay = startOfTodayICT();
+    const today = nowICT();
+    const startOfMonth = new Date(today.getUTCFullYear(), today.getUTCMonth(), 1);
 
     const [attendance, pendingLeave, pendingOT, openOrders, machines, wireRemaining] = await Promise.all([
       prisma.attendanceDay.findMany({ where: { date: { gte: startOfDay } }, select: { am: true, pm: true } }),
