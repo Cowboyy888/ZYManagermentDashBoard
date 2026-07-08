@@ -6,6 +6,7 @@ import { ZysteelLogo } from "@/components/ZysteelLogo";
 import { useTranslations } from "@/lib/i18n/useTranslations";
 import * as enNav from "@/locales/en/nav";
 import * as zhNav from "@/locales/zh-CN/nav";
+import { can, type Role, type Action } from "@/lib/rbac";
 
 export function Sidebar({
   userName,
@@ -20,12 +21,17 @@ export function Sidebar({
   const router = useRouter();
   const t = useTranslations(enNav.nav, zhNav.nav);
 
+  // permission: null = visible to all authenticated users
+  // permission: Action = only shown when can(userRole, action)
+  const role = (userRole || "") as Role;
+  const canSee = (action: Action | null) => action == null || can(role, action);
+
   const NAV_SECTIONS = [
-    { labelKey: "sectionOverview" as const, items: [
+    { labelKey: "sectionOverview" as const, permission: null as Action | null, items: [
       { href: "/",          labelKey: "dashboard" as const,          icon: GridIcon },
       { href: "/executive", labelKey: "executiveAnalytics" as const,  icon: BarLineIcon },
     ]},
-    { labelKey: "sectionPeople" as const, items: [
+    { labelKey: "sectionPeople" as const, permission: "employee.read" as Action, items: [
       { href: "/employees",  labelKey: "employees" as const,  icon: UsersIcon },
       { href: "/org-chart",  labelKey: "orgChart" as const,   icon: OrgIcon },
       { href: "/attendance", labelKey: "attendance" as const, icon: CalendarIcon },
@@ -34,11 +40,11 @@ export function Sidebar({
       { href: "/overtime",   labelKey: "overtime" as const,   icon: ClockIcon },
       { href: "/leave",      labelKey: "leave" as const,      icon: LeaveIcon },
     ]},
-    { labelKey: "sectionOrganisation" as const, items: [
+    { labelKey: "sectionOrganisation" as const, permission: "settings.read" as Action, items: [
       { href: "/departments", labelKey: "departments" as const, icon: DeptIcon },
       { href: "/positions",   labelKey: "positions" as const,   icon: PosIcon  },
     ]},
-    { labelKey: "sectionProduction" as const, items: [
+    { labelKey: "sectionProduction" as const, permission: "production.read" as Action, items: [
       { href: "/production",             labelKey: "overview" as const,       icon: BarLineIcon },
       { href: "/production/planning",     labelKey: "productionPlanning" as const, icon: CalendarIcon },
       { href: "/production/shopfloor",   labelKey: "shopFloor" as const,        icon: GearIcon      },
@@ -49,14 +55,14 @@ export function Sidebar({
       { href: "/production/quality",     labelKey: "quality" as const,        icon: ShieldCheckIcon },
       { href: "/production/reports",     labelKey: "dailyReports" as const,   icon: ChartIcon },
     ]},
-    { labelKey: "sectionInventory" as const, items: [
+    { labelKey: "sectionInventory" as const, permission: "inventory.read" as Action, items: [
       { href: "/inventory",              labelKey: "overview" as const,      icon: BoxIcon },
       { href: "/inventory/items",        labelKey: "items" as const,         icon: ClipboardIcon },
       { href: "/inventory/warehouses",   labelKey: "warehouses" as const,    icon: BuildingIcon },
       { href: "/inventory/transactions", labelKey: "transactions" as const,  icon: TruckIcon },
       { href: "/inventory/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
-    { labelKey: "sectionPurchasing" as const, items: [
+    { labelKey: "sectionPurchasing" as const, permission: "purchasing.read" as Action, items: [
       { href: "/purchasing",              labelKey: "overview" as const,         icon: ShoppingCartIcon },
       { href: "/purchasing/suppliers",    labelKey: "suppliers" as const,        icon: BuildingIcon },
       { href: "/purchasing/requisitions", labelKey: "requisitions" as const,     icon: ClipboardIcon },
@@ -64,7 +70,7 @@ export function Sidebar({
       { href: "/purchasing/receipts",     labelKey: "receiving" as const,        icon: TruckIcon },
       { href: "/purchasing/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
-    { labelKey: "sectionSales" as const, items: [
+    { labelKey: "sectionSales" as const, permission: "sales.read" as Action, items: [
       { href: "/sales",            labelKey: "overview" as const,          icon: TagIcon },
       { href: "/sales/customers",  labelKey: "customers" as const,         icon: UsersIcon },
       { href: "/sales/leads",      labelKey: "leads" as const,             icon: FunnelIcon },
@@ -73,7 +79,7 @@ export function Sidebar({
       { href: "/sales/deliveries", labelKey: "deliveries" as const,        icon: TruckIcon },
       { href: "/sales/reports",    labelKey: "financialReports" as const,  icon: ChartIcon },
     ]},
-    { labelKey: "sectionQuality" as const, items: [
+    { labelKey: "sectionQuality" as const, permission: "quality.read" as Action, items: [
       { href: "/quality",              labelKey: "overview" as const,      icon: ShieldCheckIcon },
       { href: "/quality/inspections",  labelKey: "inspections" as const,   icon: ClipboardIcon },
       { href: "/quality/ncr",          labelKey: "ncr" as const,           icon: AlertIcon },
@@ -81,7 +87,7 @@ export function Sidebar({
       { href: "/quality/certificates", labelKey: "certificates" as const,  icon: BadgeIcon },
       { href: "/quality/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
-    { labelKey: "sectionMaintenance" as const, items: [
+    { labelKey: "sectionMaintenance" as const, permission: "maintenance.read" as Action, items: [
       { href: "/maintenance",             labelKey: "overview" as const,         icon: WrenchIcon },
       { href: "/maintenance/assets",      labelKey: "assets" as const,           icon: GearIcon },
       { href: "/maintenance/work-orders", labelKey: "workOrders" as const,       icon: ClipboardIcon },
@@ -89,7 +95,7 @@ export function Sidebar({
       { href: "/maintenance/spare-parts", labelKey: "spareParts" as const,       icon: BoxIcon },
       { href: "/maintenance/reports",     labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
-    { labelKey: "sectionFinance" as const, items: [
+    { labelKey: "sectionFinance" as const, permission: "finance.read" as Action, items: [
       { href: "/finance",          labelKey: "overview" as const,          icon: FinanceIcon },
       { href: "/finance/invoices", labelKey: "invoices" as const,          icon: ClipboardIcon },
       { href: "/finance/bills",    labelKey: "bills" as const,             icon: TruckIcon },
@@ -97,7 +103,7 @@ export function Sidebar({
       { href: "/finance/expenses", labelKey: "expenses" as const,          icon: TagIcon },
       { href: "/finance/reports",  labelKey: "financialReports" as const,  icon: ChartIcon },
     ]},
-    { labelKey: "sectionBI" as const, items: [
+    { labelKey: "sectionBI" as const, permission: "bi.read" as Action, items: [
       { href: "/bi",             labelKey: "ceoDashboard" as const,         icon: BarLineIcon },
       { href: "/bi/hr",          labelKey: "hrAnalytics" as const,          icon: UsersIcon },
       { href: "/bi/production",  labelKey: "productionAnalytics" as const,  icon: GearIcon },
@@ -110,7 +116,7 @@ export function Sidebar({
       { href: "/bi/forecast",    labelKey: "forecast" as const,             icon: ChartIcon },
       { href: "/bi/alerts",      labelKey: "alerts" as const,               icon: AlertIcon },
     ]},
-    { labelKey: "sectionSmartFactory" as const, items: [
+    { labelKey: "sectionSmartFactory" as const, permission: "factory.view" as Action, items: [
       { href: "/factory",         labelKey: "overview" as const,     icon: ChartIcon },
       { href: "/factory/machines",labelKey: "machines" as const,     icon: GearIcon },
       { href: "/factory/alarms",  labelKey: "alarms" as const,       icon: AlertIcon },
@@ -119,31 +125,31 @@ export function Sidebar({
       { href: "/factory/iot",     labelKey: "iotDevices" as const,   icon: GlobeIcon },
       { href: "/factory-areas",   labelKey: "factoryAreas" as const, icon: BuildingIcon },
     ]},
-    { labelKey: "sectionPayroll" as const, items: [
+    { labelKey: "sectionPayroll" as const, permission: "payroll.read" as Action, items: [
       { href: "/payroll", labelKey: "payroll" as const, icon: CashIcon },
     ]},
-    { labelKey: "sectionPortal" as const, items: [
+    { labelKey: "sectionPortal" as const, permission: "portal.manage" as Action, items: [
       { href: "/portal",                labelKey: "overview" as const,       icon: GlobeIcon },
       { href: "/portal/customers",      labelKey: "customers" as const,      icon: UsersIcon },
       { href: "/portal/suppliers",      labelKey: "suppliers" as const,      icon: BuildingIcon },
       { href: "/portal/tickets",        labelKey: "ai" as const,             icon: ClipboardIcon },
       { href: "/portal/announcements",  labelKey: "notifications" as const,  icon: BellIcon },
     ]},
-    { labelKey: "sectionAdmin" as const, items: [
+    { labelKey: "sectionAdmin" as const, permission: "audit.view" as Action, items: [
       { href: "/admin/users",  labelKey: "users" as const,         icon: KeyIcon },
       { href: "/admin/audit",  labelKey: "auditLog" as const,      icon: ClipboardIcon },
       { href: "/admin/health", labelKey: "systemHealth" as const,  icon: HeartPulseIcon },
       { href: "/admin/import", labelKey: "dataImport" as const,    icon: ClipboardIcon },
     ]},
-    { labelKey: "sectionAI" as const, items: [
+    { labelKey: "sectionAI" as const, permission: "employee.read" as Action, items: [
       { href: "/ai/hr",         labelKey: "hrAssistant" as const,   icon: SparkleIcon },
       { href: "/ai/production", labelKey: "productionAI" as const,  icon: SparkleIcon },
       { href: "/ai/sales",      labelKey: "salesAI" as const,       icon: SparkleIcon },
     ]},
-    { labelKey: "sectionAlerts" as const, items: [
+    { labelKey: "sectionAlerts" as const, permission: "notification.read" as Action, items: [
       { href: "/notifications", labelKey: "notifications" as const, icon: BellIcon },
     ]},
-  ];
+  ].filter(s => canSee(s.permission));
 
   async function signOut() {
     await authClient.signOut();
