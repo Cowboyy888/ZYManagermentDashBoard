@@ -105,12 +105,14 @@ export function DashboardClient({
 
   // Attendance donut data
   const totalAttendance = presentToday + leaveToday + absentToday;
-  const attendanceData = totalAttendance === 0
+  const noRecordToday = Math.max(0, headcount - totalAttendance);
+  const attendanceData = headcount === 0
     ? [{ name: "No data", value: 1, color: "var(--border)" }]
     : [
-        { name: "Present", value: presentToday, color: "var(--green)" },
-        { name: "Leave",   value: leaveToday,   color: "var(--amber)" },
-        { name: "Absent",  value: absentToday,  color: "var(--red)" },
+        { name: "Present",   value: presentToday, color: "var(--green)" },
+        { name: "Leave",     value: leaveToday,   color: "var(--amber)" },
+        { name: "Absent",    value: absentToday,  color: "var(--red)" },
+        { name: "No record", value: noRecordToday, color: "var(--border)" },
       ].filter(d => d.value > 0);
 
   return (
@@ -163,7 +165,7 @@ export function DashboardClient({
         />
         <KpiCard
           label="Present Today" value={presentToday || "—"}
-          sub={totalAttendance > 0 ? `${Math.round(presentToday / totalAttendance * 100)}% attendance` : "No data"}
+          sub={headcount > 0 ? `${Math.round(presentToday / headcount * 100)}% of workforce` : "No data"}
           accent="green"
           icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>}
         />

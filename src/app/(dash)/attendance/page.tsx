@@ -19,9 +19,9 @@ export default async function AttendancePage() {
         id: true, nameEn: true, nameKh: true, nameZh: true,
         photoUrl: true, departmentId: true, positionId: true,
       },
-    }),
-    prisma.department.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.position.findMany({ orderBy: [{ level: "asc" }, { name: "asc" }], select: { id: true, name: true, level: true } }),
+    }).catch(() => [] as { id: number; nameEn: string; nameKh: string; nameZh: string | null; photoUrl: string | null; departmentId: number | null; positionId: number | null }[]),
+    prisma.department.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }).catch(() => [] as { id: number; name: string }[]),
+    prisma.position.findMany({ orderBy: [{ level: "asc" }, { name: "asc" }], select: { id: true, name: true, level: true } }).catch(() => [] as { id: number; name: string; level: number }[]),
   ]);
 
   return (

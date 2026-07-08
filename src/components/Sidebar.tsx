@@ -29,6 +29,8 @@ export function Sidebar({
       { href: "/employees",  labelKey: "employees" as const,  icon: UsersIcon },
       { href: "/org-chart",  labelKey: "orgChart" as const,   icon: OrgIcon },
       { href: "/attendance", labelKey: "attendance" as const, icon: CalendarIcon },
+      { href: "/attendance/daily", labelKey: "dailyAttendance" as const, icon: CalendarIcon },
+      { href: "/shifts",           labelKey: "shiftManagement" as const, icon: ClockIcon    },
       { href: "/overtime",   labelKey: "overtime" as const,   icon: ClockIcon },
       { href: "/leave",      labelKey: "leave" as const,      icon: LeaveIcon },
     ]},
@@ -38,6 +40,8 @@ export function Sidebar({
     ]},
     { labelKey: "sectionProduction" as const, items: [
       { href: "/production",             labelKey: "overview" as const,       icon: BarLineIcon },
+      { href: "/production/planning",     labelKey: "productionPlanning" as const, icon: CalendarIcon },
+      { href: "/production/shopfloor",   labelKey: "shopFloor" as const,        icon: GearIcon      },
       { href: "/production/orders",      labelKey: "productionOrders" as const, icon: ClipboardIcon },
       { href: "/production/inventory",   labelKey: "inventory" as const,      icon: BoxIcon },
       { href: "/production/machines",    labelKey: "machines" as const,       icon: GearIcon },
