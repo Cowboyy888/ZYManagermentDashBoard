@@ -1,15 +1,15 @@
-import { redirect, notFound } from "next/navigation";
-import { guard } from "@/lib/auth/session";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth/session";
+import { can } from "@/lib/rbac";
 import { getMachineDetail } from "@/actions/factory/machines";
 import MachineDetail from "./MachineDetail";
 
 export const dynamic = "force-dynamic";
 
 export default async function MachineDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  try {
-    await guard("factory.view");
-  } catch {
-    redirect("/login");
+  const user = await requireUser();
+  if (!can(user.role, "factory.view")) {
+    return <div style={{ padding: "2rem", color: "var(--text-2)" }}>You do not have permission to view this page.</div>;
   }
 
   const { id } = await params;

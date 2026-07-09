@@ -1,15 +1,14 @@
-import { redirect } from "next/navigation";
-import { guard } from "@/lib/auth/session";
+import { requireUser } from "@/lib/auth/session";
+import { can } from "@/lib/rbac";
 import { getTodayShiftSummary, getShiftTrend } from "@/actions/factory/shifts";
 import ShiftManager from "./ShiftManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function ShiftsPage() {
-  try {
-    await guard("factory.view");
-  } catch {
-    redirect("/login");
+  const user = await requireUser();
+  if (!can(user.role, "factory.view")) {
+    return <div style={{ padding: "2rem", color: "var(--text-2)" }}>You do not have permission to view this page.</div>;
   }
 
   const [todayRes, trendRes] = await Promise.all([
