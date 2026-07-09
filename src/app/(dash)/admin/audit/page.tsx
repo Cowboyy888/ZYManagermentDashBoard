@@ -13,8 +13,8 @@ export default async function AuditLogPage() {
   const result = await getAuditLogs({ page: 1 });
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Audit Log</h1>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <h1 style={{ fontSize: "1.25rem", fontWeight: 600 }}>Audit Log</h1>
       <AuditLogViewer
         initialLogs={result.logs}
         total={result.total}

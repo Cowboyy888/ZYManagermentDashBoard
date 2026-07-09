@@ -23,23 +23,113 @@ function timeAgo(iso: string) {
 
 function JsonPreview({ data }: { data: unknown }) {
   const [open, setOpen] = useState(false);
-  if (data == null) return <span className="text-xs text-gray-400">—</span>;
+  if (data == null) return <span style={{ fontSize: "0.75rem", color: "var(--text-3)" }}>—</span>;
   return (
     <span>
       <button
         onClick={() => setOpen(!open)}
-        className="text-xs text-indigo-600 underline"
+        style={{
+          fontSize: "0.75rem",
+          color: "var(--steel)",
+          textDecoration: "underline",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+        }}
       >
         {open ? "hide" : "view"}
       </button>
       {open && (
-        <pre className="mt-1 text-xs bg-gray-50 border border-gray-200 rounded p-2 max-w-xs overflow-auto max-h-32 whitespace-pre-wrap">
+        <pre
+          style={{
+            marginTop: 4,
+            fontSize: "0.75rem",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 6,
+            padding: 8,
+            maxWidth: 280,
+            overflow: "auto",
+            maxHeight: 128,
+            whiteSpace: "pre-wrap",
+          }}
+        >
           {JSON.stringify(data, null, 2)}
         </pre>
       )}
     </span>
   );
 }
+
+// ── Shared inline-style equivalents of the project CSS classes ────────────────
+
+const panelStyle: React.CSSProperties = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 12,
+  overflow: "hidden",
+};
+
+const panelHeadStyle: React.CSSProperties = {
+  padding: "15px 20px",
+  borderBottom: "1px solid var(--border)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+};
+
+const panelBodyStyle: React.CSSProperties = {
+  padding: "18px 20px",
+};
+
+const btnStyle: React.CSSProperties = {
+  height: 36,
+  padding: "0 16px",
+  borderRadius: "var(--radius)",
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: 13.5,
+  fontWeight: 500,
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  whiteSpace: "nowrap",
+};
+
+const btnSmStyle: React.CSSProperties = { ...btnStyle, height: 30, padding: "0 12px", fontSize: 13 };
+
+const btnMutedStyle: React.CSSProperties = {
+  ...btnSmStyle,
+  background: "var(--surface-2)",
+  color: "var(--text)",
+};
+
+const inputStyle: React.CSSProperties = {
+  height: 36,
+  padding: "0 12px",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: 13.5,
+  flex: 1,
+  minWidth: 192,
+};
+
+const selectStyle: React.CSSProperties = {
+  height: 36,
+  padding: "0 12px",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: 13.5,
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function AuditLogViewer({ initialLogs, total, page }: Props) {
   const [search, setSearch] = useState("");
@@ -68,37 +158,38 @@ export default function AuditLogViewer({ initialLogs, total, page }: Props) {
   const entityTypes = Array.from(new Set(initialLogs.map((l) => l.entityType))).sort();
 
   return (
-    <div className="panel">
-      <div className="panel-head">
+    <div style={panelStyle}>
+      <div style={panelHeadStyle}>
         <span>Audit Log</span>
-        <span className="text-sm font-normal text-gray-500">{filteredTotal.toLocaleString()} entries</span>
+        <span style={{ fontSize: "0.875rem", fontWeight: 400, color: "var(--text-2)" }}>
+          {filteredTotal.toLocaleString()} entries
+        </span>
       </div>
-      <div className="panel-body">
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-2 mb-4">
+      <div style={panelBodyStyle}>
+        <form onSubmit={handleSearch} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by user, action, entity ID…"
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 min-w-48"
+            style={inputStyle}
           />
           <select
             value={entityFilter}
             onChange={(e) => setEntityFilter(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+            style={selectStyle}
           >
             <option value="">All entity types</option>
             {entityTypes.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
-          <button type="submit" className="btn btn-sm" disabled={isPending}>
+          <button type="submit" style={btnSmStyle} disabled={isPending}>
             {isPending ? "Loading…" : "Search"}
           </button>
           <button
             type="button"
-            className="btn btn-sm"
-            style={{ background: "#f3f4f6", color: "#374151" }}
+            style={btnMutedStyle}
             onClick={() => {
               setSearch("");
               setEntityFilter("");
@@ -109,49 +200,80 @@ export default function AuditLogViewer({ initialLogs, total, page }: Props) {
           </button>
         </form>
 
-        <div className="overflow-x-auto">
-          <table className="data-table w-full text-sm">
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>ID</th>
-                <th>IP</th>
-                <th>Before</th>
-                <th>After</th>
+                {["Time", "User", "Action", "Entity", "ID", "IP", "Before", "After"].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: "left",
+                      padding: "10px 12px",
+                      fontWeight: 600,
+                      color: "var(--text-2)",
+                      fontSize: 12.5,
+                      borderBottom: "1px solid var(--border)",
+                      whiteSpace: "nowrap",
+                      background: "var(--surface-2)",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-400 py-8">No audit entries found.</td>
+                  <td
+                    colSpan={8}
+                    style={{ textAlign: "center", color: "var(--text-3)", padding: "2rem 12px" }}
+                  >
+                    No audit entries found.
+                  </td>
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id}>
-                    <td>
+                  <tr key={log.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle" }}>
                       <span title={new Date(log.createdAt).toLocaleString()}>{timeAgo(log.createdAt)}</span>
                     </td>
-                    <td>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle" }}>
                       {log.user ? (
                         <div>
-                          <div className="font-medium">{log.user.name}</div>
-                          <div className="text-xs text-gray-400">{log.user.email}</div>
+                          <div style={{ fontWeight: 500 }}>{log.user.name}</div>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-2)" }}>{log.user.email}</div>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs">System</span>
+                        <span style={{ color: "var(--text-2)", fontSize: "0.75rem" }}>System</span>
                       )}
                     </td>
-                    <td>
-                      <span className="tag" style={{ fontSize: "0.7rem" }}>{log.action}</span>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle" }}>
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          padding: "2px 8px",
+                          borderRadius: 6,
+                          fontWeight: 500,
+                          display: "inline-block",
+                          whiteSpace: "nowrap",
+                          background: "var(--surface-2)",
+                          color: "var(--text)",
+                        }}
+                      >
+                        {log.action}
+                      </span>
                     </td>
-                    <td>{log.entityType}</td>
-                    <td className="font-mono text-xs text-gray-500">{log.entityId}</td>
-                    <td className="text-xs text-gray-400">{log.ip ?? "—"}</td>
-                    <td><JsonPreview data={log.before} /></td>
-                    <td><JsonPreview data={log.after} /></td>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle" }}>{log.entityType}</td>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle", fontFamily: "monospace", fontSize: "0.75rem", color: "var(--text-2)" }}>
+                      {log.entityId}
+                    </td>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle", fontSize: "0.75rem", color: "var(--text-3)" }}>
+                      {log.ip ?? "—"}
+                    </td>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle" }}><JsonPreview data={log.before} /></td>
+                    <td style={{ padding: "9px 12px", verticalAlign: "middle" }}><JsonPreview data={log.after} /></td>
                   </tr>
                 ))
               )}
@@ -160,22 +282,20 @@ export default function AuditLogViewer({ initialLogs, total, page }: Props) {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-gray-500">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
+            <span style={{ fontSize: "0.875rem", color: "var(--text-2)" }}>
               Page {currentPage} of {totalPages}
             </span>
-            <div className="flex gap-1">
+            <div style={{ display: "flex", gap: 4 }}>
               <button
-                className="btn btn-sm"
-                style={{ background: "#f3f4f6", color: "#374151" }}
+                style={btnMutedStyle}
                 disabled={currentPage <= 1 || isPending}
                 onClick={() => loadPage(currentPage - 1, search, entityFilter)}
               >
                 ← Prev
               </button>
               <button
-                className="btn btn-sm"
-                style={{ background: "#f3f4f6", color: "#374151" }}
+                style={btnMutedStyle}
                 disabled={currentPage >= totalPages || isPending}
                 onClick={() => loadPage(currentPage + 1, search, entityFilter)}
               >
