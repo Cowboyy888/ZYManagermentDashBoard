@@ -30,6 +30,18 @@ interface Props {
     payrollDate: string | null;
     periodEndDate: string;
   } | null;
+  opsKpis: {
+    activeProductionOrders: number | null;
+    machineOnline: number;
+    machineOffline: number;
+    machineMaintenance: number;
+    machineTotal: number;
+    lowStockCount: number | null;
+    criticalAlarmCount: number | null;
+    wireRemainingKg: number | null;
+    canProduction: boolean;
+    canInventory: boolean;
+  } | null;
 }
 
 const DEPT_COLORS = ["#2d4a63", "#3a5f7d", "#1d9e75", "#185fa5", "#854f0b", "#3c3489", "#a32d2d", "#0f6e56"];
@@ -100,6 +112,7 @@ export function DashboardClient({
   contractExpiring30, contractExpiring7,
   todayBirthdays, departments, recentOt, hiringByMonth,
   monthlyAttendanceRate, pendingLeaveCount, onLeaveTodayCount, latestPeriod,
+  opsKpis,
 }: Props) {
   const today = new Date();
 
@@ -252,6 +265,60 @@ export function DashboardClient({
           </>
         )}
       </div>
+
+      {/* Operations KPI row */}
+      {opsKpis && (
+        <div>
+          <SectionTitle>Operations</SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
+            {opsKpis.canProduction && (
+              <>
+                <KpiCard
+                  label="Active Orders"
+                  value={opsKpis.activeProductionOrders ?? "—"}
+                  sub="Production in progress"
+                  accent={opsKpis.activeProductionOrders === null ? "steel" : opsKpis.activeProductionOrders > 0 ? "green" : "steel"}
+                  icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
+                />
+                <KpiCard
+                  label="Machines Online"
+                  value={opsKpis.machineTotal > 0 ? `${opsKpis.machineOnline}/${opsKpis.machineTotal}` : "—"}
+                  sub={opsKpis.machineOffline > 0 ? `${opsKpis.machineOffline} offline` : opsKpis.machineMaintenance > 0 ? `${opsKpis.machineMaintenance} in maintenance` : "All operational"}
+                  accent={opsKpis.machineOffline > 0 ? "red" : opsKpis.machineMaintenance > 0 ? "amber" : "green"}
+                  icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>}
+                />
+                <KpiCard
+                  label="Critical Alarms"
+                  value={opsKpis.criticalAlarmCount ?? "—"}
+                  sub="Active critical alerts"
+                  accent={opsKpis.criticalAlarmCount === null ? "steel" : opsKpis.criticalAlarmCount > 0 ? "red" : "green"}
+                  icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                />
+              </>
+            )}
+            {opsKpis.canInventory && (
+              <>
+                <KpiCard
+                  label="Low Stock Items"
+                  value={opsKpis.lowStockCount ?? "—"}
+                  sub="Below minimum stock"
+                  accent={opsKpis.lowStockCount === null ? "steel" : opsKpis.lowStockCount > 5 ? "red" : opsKpis.lowStockCount > 0 ? "amber" : "green"}
+                  icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>}
+                />
+                {opsKpis.wireRemainingKg !== null && (
+                  <KpiCard
+                    label="Wire Stock"
+                    value={`${opsKpis.wireRemainingKg.toLocaleString("en-US", { maximumFractionDigits: 0 })} kg`}
+                    sub="Total remaining wire"
+                    accent={opsKpis.wireRemainingKg < 500 ? "red" : opsKpis.wireRemainingKg < 2000 ? "amber" : "green"}
+                    icon={<svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Charts row */}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>

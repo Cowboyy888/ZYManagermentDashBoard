@@ -1,9 +1,10 @@
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { can } from "@/lib/rbac";
 import { DashboardClient } from "./DashboardClient";
 
 export default async function DashboardPage() {
-  await requireUser();
+  const user = await requireUser();
 
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
@@ -121,6 +122,51 @@ export default async function DashboardPage() {
     }).catch(() => [] as { month: string; count: number }[]),
   ]);
 
+  const canReadProduction = can(user.role, "production.read");
+  const canReadInventory  = can(user.role, "inventory.read");
+
+  const [
+    activeProductionOrders,
+    machineStatusCounts,
+    lowStockCount,
+    criticalAlarmCount,
+    wireRemainingKg,
+  ] = await Promise.all([
+    canReadProduction
+      ? prisma.productionOrder.count({ where: { status: "IN_PROGRESS" } }).catch(() => null)
+      : null,
+
+    canReadProduction
+      ? prisma.machine.groupBy({ by: ["status"], _count: { status: true } }).catch(() => null)
+      : null,
+
+    canReadInventory
+      ? prisma.inventoryItem.findMany({ select: { currentStock: true, minStock: true } })
+          .then(items => items.filter(i => Number(i.currentStock) < Number(i.minStock)).length)
+          .catch(() => null)
+      : null,
+
+    canReadProduction
+      ? prisma.factoryAlarm.count({ where: { status: "ACTIVE", severity: "CRITICAL" } }).catch(() => null)
+      : null,
+
+    canReadInventory
+      ? prisma.wireInventory.aggregate({ _sum: { remainingKg: true } })
+          .then(r => r._sum.remainingKg ? Number(r._sum.remainingKg) : 0)
+          .catch(() => null)
+      : null,
+  ]);
+
+  // Resolve machine status into named counts
+  const machineOnline = machineStatusCounts?.find(r => r.status === "OPERATIONAL")?._count?.status ?? 0;
+  const machineOffline = machineStatusCounts
+    ? (machineStatusCounts.find(r => r.status === "OFFLINE")?._count?.status ?? 0)
+    : 0;
+  const machineMaintenance = machineStatusCounts
+    ? (machineStatusCounts.find(r => r.status === "UNDER_MAINTENANCE")?._count?.status ?? 0)
+    : 0;
+  const machineTotal = machineOnline + machineOffline + machineMaintenance;
+
   const [periodPayslips, periodFinalized] = latestPeriod
     ? await Promise.all([
         prisma.payslip.aggregate({
@@ -173,6 +219,18 @@ export default async function DashboardPage() {
           finalizedCount: periodFinalized,
           payrollDate: latestPeriod.payrollDate ? latestPeriod.payrollDate.toISOString() : null,
           periodEndDate: latestPeriod.endDate.toISOString(),
+        } : null}
+        opsKpis={canReadProduction || canReadInventory ? {
+          activeProductionOrders: activeProductionOrders ?? null,
+          machineOnline,
+          machineOffline,
+          machineMaintenance,
+          machineTotal,
+          lowStockCount: lowStockCount ?? null,
+          criticalAlarmCount: criticalAlarmCount ?? null,
+          wireRemainingKg: wireRemainingKg ?? null,
+          canProduction: canReadProduction,
+          canInventory: canReadInventory,
         } : null}
       />
     </div>
