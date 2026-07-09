@@ -3,6 +3,7 @@ import { put } from "@vercel/blob";
 import { requireUser } from "@/lib/auth/session";
 import { can } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 const ALLOWED_TYPES = new Set([
@@ -17,6 +18,9 @@ export async function POST(req: NextRequest) {
     const user = await requireUser();
     if (!can(user.role, "employee.update")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!checkRateLimit(user.id, "doc-upload", 30, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const formData = await req.formData();

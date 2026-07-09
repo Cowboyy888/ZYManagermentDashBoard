@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getSessionUser } from "@/lib/auth/session";
 import { can } from "@/lib/rbac";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 // image/jpg is non-standard but some browsers/devices send it
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
     }
     if (!can(user.role, "employee.update")) {
       return NextResponse.json({ error: "Forbidden — your role cannot update employees" }, { status: 403 });
+    }
+    if (!checkRateLimit(user.id, "photo-upload", 20, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const formData = await req.formData();

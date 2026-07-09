@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { anthropic, AI_MODEL, buildHRContext, buildProductionContext, buildSalesContext } from "@/lib/ai";
 import type { ChatMessage } from "@/lib/ai";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -14,6 +15,9 @@ const DOMAIN_BUILDERS: Record<string, () => Promise<string>> = {
 export async function POST(request: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!checkRateLimit(user.id, "ai-chat", 30, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   let body: { domain: string; messages: ChatMessage[] };
   try { body = await request.json(); }
