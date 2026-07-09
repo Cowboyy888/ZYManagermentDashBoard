@@ -1,0 +1,11 @@
+export { common } from "./common";
+export { nav } from "./nav";
+export { dashboard } from "./dashboard";
+export { hr } from "./hr";
+export { payroll } from "./payroll";
+export { production } from "./production";
+export { inventory } from "./inventory";
+export { purchasing } from "./purchasing";
+export { sales } from "./sales";
+export { finance } from "./finance";
+export { validation } from "./validation";

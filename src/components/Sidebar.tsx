@@ -6,6 +6,7 @@ import { ZysteelLogo } from "@/components/ZysteelLogo";
 import { useTranslations } from "@/lib/i18n/useTranslations";
 import * as enNav from "@/locales/en/nav";
 import * as zhNav from "@/locales/zh-CN/nav";
+import * as kmNav from "@/locales/km/nav";
 import { can, type Role, type Action } from "@/lib/rbac";
 
 export function Sidebar({
@@ -19,7 +20,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const t = useTranslations(enNav.nav, zhNav.nav);
+  const t = useTranslations(enNav.nav, zhNav.nav, kmNav.nav);
 
   // permission: null = visible to all authenticated users
   // permission: Action = only shown when can(userRole, action)

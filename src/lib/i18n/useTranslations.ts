@@ -3,20 +3,25 @@
 import { useLocale } from "./LocaleContext";
 import type { Locale } from "./index";
 
-// Generic translation hook — pass the module dict for both locales.
-// zhCN is typed as Record<keyof T, string> so literal types don't clash.
+type LocaleDict<T> = { [K in keyof T]: T[K] extends (...args: infer A) => unknown ? (...args: A) => string : string };
+
+// Generic translation hook — pass the module dict for each supported locale.
+// km falls back to en when not supplied.
 export function useTranslations<T extends Record<string, unknown>>(
   en: T,
-  zhCN: { [K in keyof T]: T[K] extends (...args: infer A) => unknown ? (...args: A) => string : string },
+  zhCN: LocaleDict<T>,
+  km?: LocaleDict<T>,
 ): T {
   const { locale } = useLocale();
-  return (locale === "zh-CN" ? zhCN : en) as T;
+  if (locale === "zh-CN") return zhCN as T;
+  if (locale === "km") return (km ?? en) as T;
+  return en;
 }
 
 // Helper: format date for locale
 export function useDateFormatter() {
   const { locale } = useLocale();
-  const tag = locale === "zh-CN" ? "zh-CN" : "en-US";
+  const tag = locale === "zh-CN" ? "zh-CN" : locale === "km" ? "km-KH" : "en-US";
   return {
     short: (d: Date | string | null) => {
       if (!d) return "—";
@@ -36,7 +41,7 @@ export function useDateFormatter() {
 // Helper: format numbers for locale
 export function useNumberFormatter() {
   const { locale } = useLocale();
-  const tag = locale === "zh-CN" ? "zh-CN" : "en-US";
+  const tag = locale === "zh-CN" ? "zh-CN" : locale === "km" ? "km-KH" : "en-US";
   return {
     currency: (n: number) => new Intl.NumberFormat(tag, { style: "currency", currency: "USD" }).format(n),
     number: (n: number) => new Intl.NumberFormat(tag).format(n),
