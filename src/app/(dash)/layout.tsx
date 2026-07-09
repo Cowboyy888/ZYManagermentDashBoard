@@ -32,7 +32,7 @@ export default async function DashLayout({ children }: { children: React.ReactNo
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
       <SkipLink />
       <Sidebar userName={user.name} userRole={user.role} notifications={notifCount} />
-      <div style={{ marginLeft: 230, flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+      <div style={{ marginLeft: "var(--sidebar-w, 240px)", flex: 1, minWidth: 0, display: "flex", flexDirection: "column", transition: "margin-left 0.2s ease" }}>
         {/* Top bar with global search */}
         <header style={{
           position: "sticky", top: 0, zIndex: 20,

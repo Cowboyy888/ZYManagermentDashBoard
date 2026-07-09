@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
@@ -8,6 +9,10 @@ import * as enNav from "@/locales/en/nav";
 import * as zhNav from "@/locales/zh-CN/nav";
 import * as kmNav from "@/locales/km/nav";
 import { can, type Role, type Action } from "@/lib/rbac";
+
+const EXPANDED_W = 240;
+const COLLAPSED_W = 56;
+const LS_KEY = "zy_sidebar_collapsed";
 
 export function Sidebar({
   userName,
@@ -22,10 +27,46 @@ export function Sidebar({
   const router = useRouter();
   const t = useTranslations(enNav.nav, zhNav.nav, kmNav.nav);
 
-  // permission: null = visible to all authenticated users
-  // permission: Action = only shown when can(userRole, action)
   const role = (userRole || "") as Role;
   const canSee = (action: Action | null) => action == null || can(role, action);
+
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [bp, setBp] = useState<"desktop" | "tablet" | "mobile">("desktop");
+
+  useEffect(() => {
+    if (localStorage.getItem(LS_KEY) === "true") setCollapsed(true);
+
+    function measure() {
+      const w = window.innerWidth;
+      setBp(w >= 1024 ? "desktop" : w >= 768 ? "tablet" : "mobile");
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  // Keep layout margin in sync via CSS variable
+  useEffect(() => {
+    let w: number;
+    if (bp === "mobile") w = 0;
+    else if (bp === "tablet") w = COLLAPSED_W;
+    else w = collapsed ? COLLAPSED_W : EXPANDED_W;
+    document.documentElement.style.setProperty("--sidebar-w", `${w}px`);
+  }, [collapsed, bp]);
+
+  // Close overlay on navigation
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  function toggle() {
+    if (bp === "desktop") {
+      const next = !collapsed;
+      setCollapsed(next);
+      localStorage.setItem(LS_KEY, String(next));
+    } else {
+      setMobileOpen((o) => !o);
+    }
+  }
 
   const NAV_SECTIONS = [
     { labelKey: "sectionOverview" as const, permission: null as Action | null, items: [
@@ -33,34 +74,34 @@ export function Sidebar({
       { href: "/executive", labelKey: "executiveAnalytics" as const,  icon: BarLineIcon },
     ]},
     { labelKey: "sectionPeople" as const, permission: "employee.read" as Action, items: [
-      { href: "/employees",  labelKey: "employees" as const,  icon: UsersIcon },
-      { href: "/org-chart",  labelKey: "orgChart" as const,   icon: OrgIcon },
-      { href: "/attendance", labelKey: "attendance" as const, icon: CalendarIcon },
-      { href: "/attendance/daily", labelKey: "dailyAttendance" as const, icon: CalendarIcon },
-      { href: "/shifts",           labelKey: "shiftManagement" as const, icon: ClockIcon    },
-      { href: "/overtime",   labelKey: "overtime" as const,   icon: ClockIcon },
-      { href: "/leave",      labelKey: "leave" as const,      icon: LeaveIcon },
+      { href: "/employees",       labelKey: "employees" as const,        icon: UsersIcon },
+      { href: "/org-chart",       labelKey: "orgChart" as const,         icon: OrgIcon },
+      { href: "/attendance",      labelKey: "attendance" as const,       icon: CalendarIcon },
+      { href: "/attendance/daily",labelKey: "dailyAttendance" as const,  icon: CalendarIcon },
+      { href: "/shifts",          labelKey: "shiftManagement" as const,  icon: ClockIcon },
+      { href: "/overtime",        labelKey: "overtime" as const,         icon: ClockIcon },
+      { href: "/leave",           labelKey: "leave" as const,            icon: LeaveIcon },
     ]},
     { labelKey: "sectionOrganisation" as const, permission: "settings.read" as Action, items: [
       { href: "/departments", labelKey: "departments" as const, icon: DeptIcon },
       { href: "/positions",   labelKey: "positions" as const,   icon: PosIcon  },
     ]},
     { labelKey: "sectionProduction" as const, permission: "production.read" as Action, items: [
-      { href: "/production",             labelKey: "overview" as const,       icon: BarLineIcon },
-      { href: "/production/planning",     labelKey: "productionPlanning" as const, icon: CalendarIcon },
-      { href: "/production/shopfloor",   labelKey: "shopFloor" as const,        icon: GearIcon      },
-      { href: "/production/orders",      labelKey: "productionOrders" as const, icon: ClipboardIcon },
-      { href: "/production/inventory",   labelKey: "inventory" as const,      icon: BoxIcon },
-      { href: "/production/machines",    labelKey: "machines" as const,       icon: GearIcon },
-      { href: "/production/maintenance", labelKey: "maintenance" as const,    icon: WrenchIcon },
-      { href: "/production/quality",     labelKey: "quality" as const,        icon: ShieldCheckIcon },
-      { href: "/production/reports",     labelKey: "dailyReports" as const,   icon: ChartIcon },
+      { href: "/production",             labelKey: "overview" as const,          icon: BarLineIcon },
+      { href: "/production/planning",    labelKey: "productionPlanning" as const, icon: CalendarIcon },
+      { href: "/production/shopfloor",   labelKey: "shopFloor" as const,         icon: GearIcon },
+      { href: "/production/orders",      labelKey: "productionOrders" as const,  icon: ClipboardIcon },
+      { href: "/production/inventory",   labelKey: "inventory" as const,         icon: BoxIcon },
+      { href: "/production/machines",    labelKey: "machines" as const,          icon: GearIcon },
+      { href: "/production/maintenance", labelKey: "maintenance" as const,       icon: WrenchIcon },
+      { href: "/production/quality",     labelKey: "quality" as const,           icon: ShieldCheckIcon },
+      { href: "/production/reports",     labelKey: "dailyReports" as const,      icon: ChartIcon },
     ]},
     { labelKey: "sectionInventory" as const, permission: "inventory.read" as Action, items: [
-      { href: "/inventory",              labelKey: "overview" as const,      icon: BoxIcon },
-      { href: "/inventory/items",        labelKey: "items" as const,         icon: ClipboardIcon },
-      { href: "/inventory/warehouses",   labelKey: "warehouses" as const,    icon: BuildingIcon },
-      { href: "/inventory/transactions", labelKey: "transactions" as const,  icon: TruckIcon },
+      { href: "/inventory",              labelKey: "overview" as const,         icon: BoxIcon },
+      { href: "/inventory/items",        labelKey: "items" as const,            icon: ClipboardIcon },
+      { href: "/inventory/warehouses",   labelKey: "warehouses" as const,       icon: BuildingIcon },
+      { href: "/inventory/transactions", labelKey: "transactions" as const,     icon: TruckIcon },
       { href: "/inventory/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
     { labelKey: "sectionPurchasing" as const, permission: "purchasing.read" as Action, items: [
@@ -72,20 +113,20 @@ export function Sidebar({
       { href: "/purchasing/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
     { labelKey: "sectionSales" as const, permission: "sales.read" as Action, items: [
-      { href: "/sales",            labelKey: "overview" as const,          icon: TagIcon },
-      { href: "/sales/customers",  labelKey: "customers" as const,         icon: UsersIcon },
-      { href: "/sales/leads",      labelKey: "leads" as const,             icon: FunnelIcon },
-      { href: "/sales/quotations", labelKey: "quotations" as const,        icon: ClipboardIcon },
-      { href: "/sales/orders",     labelKey: "salesOrders" as const,       icon: BoxIcon },
-      { href: "/sales/deliveries", labelKey: "deliveries" as const,        icon: TruckIcon },
-      { href: "/sales/reports",    labelKey: "financialReports" as const,  icon: ChartIcon },
+      { href: "/sales",            labelKey: "overview" as const,         icon: TagIcon },
+      { href: "/sales/customers",  labelKey: "customers" as const,        icon: UsersIcon },
+      { href: "/sales/leads",      labelKey: "leads" as const,            icon: FunnelIcon },
+      { href: "/sales/quotations", labelKey: "quotations" as const,       icon: ClipboardIcon },
+      { href: "/sales/orders",     labelKey: "salesOrders" as const,      icon: BoxIcon },
+      { href: "/sales/deliveries", labelKey: "deliveries" as const,       icon: TruckIcon },
+      { href: "/sales/reports",    labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
     { labelKey: "sectionQuality" as const, permission: "quality.read" as Action, items: [
-      { href: "/quality",              labelKey: "overview" as const,      icon: ShieldCheckIcon },
-      { href: "/quality/inspections",  labelKey: "inspections" as const,   icon: ClipboardIcon },
-      { href: "/quality/ncr",          labelKey: "ncr" as const,           icon: AlertIcon },
-      { href: "/quality/capa",         labelKey: "capa" as const,          icon: CheckSquareIcon },
-      { href: "/quality/certificates", labelKey: "certificates" as const,  icon: BadgeIcon },
+      { href: "/quality",              labelKey: "overview" as const,         icon: ShieldCheckIcon },
+      { href: "/quality/inspections",  labelKey: "inspections" as const,      icon: ClipboardIcon },
+      { href: "/quality/ncr",          labelKey: "ncr" as const,              icon: AlertIcon },
+      { href: "/quality/capa",         labelKey: "capa" as const,             icon: CheckSquareIcon },
+      { href: "/quality/certificates", labelKey: "certificates" as const,     icon: BadgeIcon },
       { href: "/quality/reports",      labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
     { labelKey: "sectionMaintenance" as const, permission: "maintenance.read" as Action, items: [
@@ -97,12 +138,12 @@ export function Sidebar({
       { href: "/maintenance/reports",     labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
     { labelKey: "sectionFinance" as const, permission: "finance.read" as Action, items: [
-      { href: "/finance",          labelKey: "overview" as const,          icon: FinanceIcon },
-      { href: "/finance/invoices", labelKey: "invoices" as const,          icon: ClipboardIcon },
-      { href: "/finance/bills",    labelKey: "bills" as const,             icon: TruckIcon },
-      { href: "/finance/payments", labelKey: "payments" as const,          icon: CashIcon },
-      { href: "/finance/expenses", labelKey: "expenses" as const,          icon: TagIcon },
-      { href: "/finance/reports",  labelKey: "financialReports" as const,  icon: ChartIcon },
+      { href: "/finance",          labelKey: "overview" as const,         icon: FinanceIcon },
+      { href: "/finance/invoices", labelKey: "invoices" as const,         icon: ClipboardIcon },
+      { href: "/finance/bills",    labelKey: "bills" as const,            icon: TruckIcon },
+      { href: "/finance/payments", labelKey: "payments" as const,         icon: CashIcon },
+      { href: "/finance/expenses", labelKey: "expenses" as const,         icon: TagIcon },
+      { href: "/finance/reports",  labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
     { labelKey: "sectionBI" as const, permission: "bi.read" as Action, items: [
       { href: "/bi",             labelKey: "ceoDashboard" as const,         icon: BarLineIcon },
@@ -118,39 +159,39 @@ export function Sidebar({
       { href: "/bi/alerts",      labelKey: "alerts" as const,               icon: AlertIcon },
     ]},
     { labelKey: "sectionSmartFactory" as const, permission: "factory.view" as Action, items: [
-      { href: "/factory",         labelKey: "overview" as const,     icon: ChartIcon },
-      { href: "/factory/machines",labelKey: "machines" as const,     icon: GearIcon },
-      { href: "/factory/alarms",  labelKey: "alarms" as const,       icon: AlertIcon },
-      { href: "/factory/oee",     labelKey: "oee" as const,          icon: ChartIcon },
-      { href: "/factory/shifts",  labelKey: "shifts" as const,       icon: ClockIcon },
-      { href: "/factory/iot",     labelKey: "iotDevices" as const,   icon: GlobeIcon },
-      { href: "/factory-areas",   labelKey: "factoryAreas" as const, icon: BuildingIcon },
+      { href: "/factory",          labelKey: "overview" as const,     icon: ChartIcon },
+      { href: "/factory/machines", labelKey: "machines" as const,     icon: GearIcon },
+      { href: "/factory/alarms",   labelKey: "alarms" as const,       icon: AlertIcon },
+      { href: "/factory/oee",      labelKey: "oee" as const,          icon: ChartIcon },
+      { href: "/factory/shifts",   labelKey: "shifts" as const,       icon: ClockIcon },
+      { href: "/factory/iot",      labelKey: "iotDevices" as const,   icon: GlobeIcon },
+      { href: "/factory-areas",    labelKey: "factoryAreas" as const, icon: BuildingIcon },
     ]},
     { labelKey: "sectionPayroll" as const, permission: "payroll.read" as Action, items: [
       { href: "/payroll", labelKey: "payroll" as const, icon: CashIcon },
     ]},
     { labelKey: "sectionPortal" as const, permission: "portal.manage" as Action, items: [
-      { href: "/portal",                labelKey: "overview" as const,       icon: GlobeIcon },
-      { href: "/portal/customers",      labelKey: "customers" as const,      icon: UsersIcon },
-      { href: "/portal/suppliers",      labelKey: "suppliers" as const,      icon: BuildingIcon },
-      { href: "/portal/tickets",        labelKey: "ai" as const,             icon: ClipboardIcon },
-      { href: "/portal/announcements",  labelKey: "notifications" as const,  icon: BellIcon },
+      { href: "/portal",               labelKey: "overview" as const,      icon: GlobeIcon },
+      { href: "/portal/customers",     labelKey: "customers" as const,     icon: UsersIcon },
+      { href: "/portal/suppliers",     labelKey: "suppliers" as const,     icon: BuildingIcon },
+      { href: "/portal/tickets",       labelKey: "ai" as const,            icon: ClipboardIcon },
+      { href: "/portal/announcements", labelKey: "notifications" as const, icon: BellIcon },
     ]},
     { labelKey: "sectionAdmin" as const, permission: "audit.view" as Action, items: [
-      { href: "/admin/users",  labelKey: "users" as const,         icon: KeyIcon },
-      { href: "/admin/audit",  labelKey: "auditLog" as const,      icon: ClipboardIcon },
-      { href: "/admin/health", labelKey: "systemHealth" as const,  icon: HeartPulseIcon },
-      { href: "/admin/import", labelKey: "dataImport" as const,    icon: ClipboardIcon },
+      { href: "/admin/users",  labelKey: "users" as const,        icon: KeyIcon },
+      { href: "/admin/audit",  labelKey: "auditLog" as const,     icon: ClipboardIcon },
+      { href: "/admin/health", labelKey: "systemHealth" as const, icon: HeartPulseIcon },
+      { href: "/admin/import", labelKey: "dataImport" as const,   icon: ClipboardIcon },
     ]},
     { labelKey: "sectionAI" as const, permission: "employee.read" as Action, items: [
-      { href: "/ai/hr",         labelKey: "hrAssistant" as const,   icon: SparkleIcon },
-      { href: "/ai/production", labelKey: "productionAI" as const,  icon: SparkleIcon },
-      { href: "/ai/sales",      labelKey: "salesAI" as const,       icon: SparkleIcon },
+      { href: "/ai/hr",         labelKey: "hrAssistant" as const,  icon: SparkleIcon },
+      { href: "/ai/production", labelKey: "productionAI" as const, icon: SparkleIcon },
+      { href: "/ai/sales",      labelKey: "salesAI" as const,      icon: SparkleIcon },
     ]},
     { labelKey: "sectionAlerts" as const, permission: "notification.read" as Action, items: [
       { href: "/notifications", labelKey: "notifications" as const, icon: BellIcon },
     ]},
-  ].filter(s => canSee(s.permission));
+  ].filter((s) => canSee(s.permission));
 
   async function signOut() {
     await authClient.signOut();
@@ -170,148 +211,245 @@ export function Sidebar({
     return pathname.startsWith(href);
   }
 
-  return (
-    <aside
-      style={{ width: 230, background: "var(--surface)", borderRight: "1px solid var(--border)" }}
-      className="fixed inset-y-0 left-0 z-30 flex flex-col h-screen"
-    >
-      {/* Brand */}
-      <div
-        style={{ borderBottom: "1px solid var(--border)" }}
-        className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
-      >
-        <ZysteelLogo size={34} />
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.01em", color: "var(--text)" }}>
-            ZYSTEEL
-          </div>
-          <div style={{ fontSize: 11, color: "var(--text-3)" }}>中粤铁网 · HR</div>
-        </div>
-      </div>
+  // In icon-only mode when desktop, or when tablet/mobile and overlay is closed
+  const iconOnly = bp === "desktop" ? collapsed : !mobileOpen;
+  const showOverlay = bp !== "desktop" && mobileOpen;
+  const sidebarW = iconOnly && bp !== "mobile" ? COLLAPSED_W : EXPANDED_W;
+  const sidebarVisible = bp !== "mobile" || mobileOpen;
 
-      {/* Navigation */}
-      <nav aria-label="Main navigation" className="flex-1 overflow-y-auto p-2 space-y-0">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.labelKey}>
-            <div
+  return (
+    <>
+      {/* Mobile hamburger — fixed top-left when sidebar is hidden */}
+      {bp === "mobile" && !mobileOpen && (
+        <button
+          onClick={toggle}
+          aria-label="Open menu"
+          style={{
+            position: "fixed", top: 12, left: 12, zIndex: 50,
+            width: 36, height: 36, borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "var(--text-2)",
+          }}
+        >
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      )}
+
+      {/* Backdrop for tablet/mobile overlay */}
+      {showOverlay && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+          style={{
+            position: "fixed", inset: 0, zIndex: 29,
+            background: "rgba(0,0,0,0.45)",
+          }}
+        />
+      )}
+
+      {/* Sidebar panel */}
+      {sidebarVisible && (
+        <aside style={{
+          position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 30,
+          width: sidebarW,
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+          display: "flex", flexDirection: "column",
+          height: "100vh",
+          transition: "width 0.2s ease",
+          overflow: "hidden",
+        }}>
+
+          {/* Brand row + toggle button */}
+          <div style={{
+            borderBottom: "1px solid var(--border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: iconOnly ? "center" : "space-between",
+            padding: iconOnly ? "14px 0" : "14px 16px",
+            flexShrink: 0,
+            gap: 8,
+          }}>
+            {iconOnly ? (
+              <ZysteelLogo size={28} />
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <ZysteelLogo size={34} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: "-0.01em", color: "var(--text)" }}>
+                    ZYSTEEL
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-3)" }}>中粤铁网 · HR</div>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={toggle}
+              title={iconOnly ? "Expand sidebar" : "Collapse sidebar"}
               style={{
-                fontSize: 11,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                color: "var(--text-3)",
-                padding: "10px 10px 3px",
-                fontWeight: 600,
+                width: 26, height: 26, borderRadius: 6,
+                border: "1px solid var(--border)",
+                background: "var(--surface-2)",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--text-3)", flexShrink: 0,
               }}
             >
-              {t[section.labelKey]}
-            </div>
-            {section.items.map(({ href, labelKey, icon: Icon }) => {
-              const active = isActive(href);
-              const showBadge = href === "/notifications" && notifications > 0;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "8px 10px",
-                    borderRadius: "var(--radius)",
-                    fontSize: 13.5,
-                    fontWeight: 500,
-                    color: active ? "#fff" : "var(--text-2)",
-                    background: active ? "var(--steel)" : "transparent",
-                    transition: "all 0.12s",
-                    textDecoration: "none",
-                    marginBottom: 1,
-                  }}
-                  className={!active ? "hover-nav-item" : ""}
-                >
-                  <Icon size={17} />
-                  <span className="flex-1">{t[labelKey]}</span>
-                  {showBadge && (
-                    <span
-                      style={{
-                        background: "#ef4444",
-                        color: "#fff",
-                        borderRadius: 9999,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: "1px 6px",
-                        minWidth: 18,
-                        textAlign: "center",
-                        lineHeight: "16px",
-                      }}
-                    >
-                      {notifications > 99 ? "99+" : notifications}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                {iconOnly
+                  ? <path d="M9 18l6-6-6-6"/>
+                  : <path d="M15 18l-6-6 6-6"/>
+                }
+              </svg>
+            </button>
           </div>
-        ))}
-      </nav>
 
-      {/* User footer */}
-      <div style={{ borderTop: "1px solid var(--border)", padding: 10 }} className="flex-shrink-0">
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
-          <div
+          {/* Navigation */}
+          <nav
+            aria-label="Main navigation"
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              background: "var(--purple-bg)",
-              color: "var(--purple)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 600,
-              fontSize: 12,
-              flexShrink: 0,
+              flex: 1, overflowY: "auto", overflowX: "hidden",
+              padding: iconOnly ? "4px 4px" : "4px 8px",
             }}
           >
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }} className="truncate">
-              {userName}
-            </p>
-            <p style={{ fontSize: 11, color: "var(--text-3)" }}>{userRole}</p>
-          </div>
-        </div>
-        <button
-          onClick={signOut}
-          style={{
-            width: "100%",
-            padding: "6px 10px",
-            borderRadius: "var(--radius)",
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            fontSize: 12.5,
-            color: "var(--text-3)",
-            textAlign: "left",
-            marginTop: 2,
-          }}
-          className="hover-sign-out"
-        >
-          {t.signOut}
-        </button>
-      </div>
+            {NAV_SECTIONS.map((section) => (
+              <div key={section.labelKey}>
+                {!iconOnly && (
+                  <div style={{
+                    fontSize: 10, textTransform: "uppercase",
+                    letterSpacing: "0.07em", color: "var(--text-3)",
+                    padding: "10px 8px 3px", fontWeight: 700,
+                  }}>
+                    {t[section.labelKey]}
+                  </div>
+                )}
+                {iconOnly && <div style={{ height: 4 }} />}
+                {section.items.map(({ href, labelKey, icon: Icon }) => {
+                  const active = isActive(href);
+                  const showBadge = href === "/notifications" && notifications > 0;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      title={iconOnly ? t[labelKey] : undefined}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: iconOnly ? "center" : "flex-start",
+                        gap: 10,
+                        padding: iconOnly ? "8px 0" : "7px 8px",
+                        borderRadius: "var(--radius)",
+                        fontSize: 13.5, fontWeight: 500,
+                        color: active ? "#fff" : "var(--text-2)",
+                        background: active ? "var(--steel)" : "transparent",
+                        transition: "all 0.12s",
+                        textDecoration: "none",
+                        marginBottom: 1,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                      }}
+                      className={!active ? "zy-nav-item" : ""}
+                    >
+                      <Icon size={17} />
+                      {!iconOnly && (
+                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {t[labelKey]}
+                        </span>
+                      )}
+                      {!iconOnly && showBadge && (
+                        <span style={{
+                          background: "#ef4444", color: "#fff",
+                          borderRadius: 9999, fontSize: 10, fontWeight: 700,
+                          padding: "1px 6px", minWidth: 18,
+                          textAlign: "center", lineHeight: "16px",
+                        }}>
+                          {notifications > 99 ? "99+" : notifications}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
 
-      <style jsx>{`
-        .hover-nav-item:hover {
-          background: var(--surface-2) !important;
-          color: var(--text) !important;
-        }
-        .hover-sign-out:hover {
-          background: var(--red-bg) !important;
-          color: var(--red) !important;
-        }
-      `}</style>
-    </aside>
+          {/* User footer */}
+          <div style={{
+            borderTop: "1px solid var(--border)",
+            padding: iconOnly ? "8px 4px" : "8px 10px",
+            flexShrink: 0,
+          }}>
+            {!iconOnly ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px 6px" }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: "50%",
+                    background: "var(--purple-bg)", color: "var(--purple)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 600, fontSize: 12, flexShrink: 0,
+                  }}>
+                    {initials}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      fontSize: 13, fontWeight: 600, color: "var(--text)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      margin: 0,
+                    }}>
+                      {userName}
+                    </p>
+                    <p style={{ fontSize: 11, color: "var(--text-3)", margin: 0 }}>{userRole}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="zy-signout"
+                  style={{
+                    width: "100%", padding: "6px 8px",
+                    borderRadius: "var(--radius)",
+                    border: "none", background: "transparent",
+                    cursor: "pointer", fontSize: 12.5,
+                    color: "var(--text-3)", textAlign: "left", marginTop: 2,
+                  }}
+                >
+                  {t.signOut}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={signOut}
+                title={t.signOut}
+                className="zy-signout"
+                style={{
+                  width: "100%", padding: "8px 0",
+                  borderRadius: "var(--radius)",
+                  border: "none", background: "transparent",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "var(--text-3)",
+                }}
+              >
+                <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <style>{`
+            .zy-nav-item:hover { background: var(--surface-2) !important; color: var(--text) !important; }
+            .zy-signout:hover { background: var(--red-bg) !important; color: var(--red) !important; }
+          `}</style>
+        </aside>
+      )}
+    </>
   );
 }
 
