@@ -26,7 +26,11 @@ export const BAND_FLAT_USD: Record<OvertimeBand, number> = {
   HOLIDAY_2_0: 2.0,
 };
 
-export const round2 = (n: number) => Math.round(n * 100) / 100;
+// Apply EPSILON nudge to |n| so the fix works for both positive and negative values.
+export const round2 = (n: number) => {
+  const sign = n >= 0 ? 1 : -1;
+  return sign * Math.round((Math.abs(n) + Number.EPSILON) * 100) / 100;
+};
 
 export const hourlyRate = (dailyRateUsd: number, hoursPerDay = 8) =>
   dailyRateUsd / hoursPerDay;

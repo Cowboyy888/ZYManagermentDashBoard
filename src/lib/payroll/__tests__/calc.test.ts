@@ -21,14 +21,12 @@ describe("round2", () => {
     expect(round2(0)).toBe(0);
   });
 
-  it("boundary: 1.125 rounds to 1.13 (not 1.12) — JS binary representation is >= 1.125", () => {
-    expect(round2(1.125)).toBe(1.13);
+  it("boundary: 1.005 rounds to 1.01 — Number.EPSILON nudge corrects binary float error", () => {
+    expect(round2(1.005)).toBe(1.01);
   });
 
-  it("boundary: 1.005 rounds to 1.00 — known JS float precision: 1.005*100 = 100.4999…", () => {
-    // Binary representation of 1.005 is slightly below 1.005, so rounds down.
-    // This documents the known limitation of Math.round-based rounding.
-    expect(round2(1.005)).toBe(1.0);
+  it("boundary: 1.125 rounds to 1.13", () => {
+    expect(round2(1.125)).toBe(1.13);
   });
 
   it("negative values", () => {
