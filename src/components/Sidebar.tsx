@@ -137,7 +137,7 @@ export function Sidebar({
       { href: "/maintenance/spare-parts", labelKey: "spareParts" as const,       icon: BoxIcon },
       { href: "/maintenance/reports",     labelKey: "financialReports" as const, icon: ChartIcon },
     ]},
-    { labelKey: "sectionFinance" as const, permission: "finance.read" as Action, items: [
+    { labelKey: "sectionFinance" as const, permission: "finance.approve" as Action, items: [
       { href: "/finance",          labelKey: "overview" as const,         icon: FinanceIcon },
       { href: "/finance/invoices", labelKey: "invoices" as const,         icon: ClipboardIcon },
       { href: "/finance/bills",    labelKey: "bills" as const,            icon: TruckIcon },
@@ -167,7 +167,7 @@ export function Sidebar({
       { href: "/factory/iot",      labelKey: "iotDevices" as const,   icon: GlobeIcon },
       { href: "/factory-areas",    labelKey: "factoryAreas" as const, icon: BuildingIcon },
     ]},
-    { labelKey: "sectionPayroll" as const, permission: "payroll.read" as Action, items: [
+    { labelKey: "sectionPayroll" as const, permission: "payroll.run" as Action, items: [
       { href: "/payroll", labelKey: "payroll" as const, icon: CashIcon },
     ]},
     { labelKey: "sectionPortal" as const, permission: "portal.manage" as Action, items: [
@@ -178,10 +178,10 @@ export function Sidebar({
       { href: "/portal/announcements", labelKey: "notifications" as const, icon: BellIcon },
     ]},
     { labelKey: "sectionAdmin" as const, permission: "audit.view" as Action, items: [
-      { href: "/admin/users",  labelKey: "users" as const,        icon: KeyIcon },
-      { href: "/admin/audit",  labelKey: "auditLog" as const,     icon: ClipboardIcon },
-      { href: "/admin/health", labelKey: "systemHealth" as const, icon: HeartPulseIcon },
-      { href: "/admin/import", labelKey: "dataImport" as const,   icon: ClipboardIcon },
+      { href: "/admin/users",  labelKey: "users" as const,        icon: KeyIcon,        permission: null as Action | null },
+      { href: "/admin/audit",  labelKey: "auditLog" as const,     icon: ClipboardIcon,  permission: null as Action | null },
+      { href: "/admin/health", labelKey: "systemHealth" as const, icon: HeartPulseIcon, permission: "system.health" as Action | null },
+      { href: "/admin/import", labelKey: "dataImport" as const,   icon: ClipboardIcon,  permission: null as Action | null },
     ]},
     { labelKey: "sectionAI" as const, permission: "employee.read" as Action, items: [
       { href: "/ai/hr",         labelKey: "hrAssistant" as const,  icon: SparkleIcon },
@@ -191,7 +191,12 @@ export function Sidebar({
     { labelKey: "sectionAlerts" as const, permission: "notification.read" as Action, items: [
       { href: "/notifications", labelKey: "notifications" as const, icon: BellIcon },
     ]},
-  ].filter((s) => canSee(s.permission));
+  ]
+    .filter((s) => canSee(s.permission))
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((i) => canSee((i as { permission?: Action | null }).permission ?? null)),
+    }));
 
   async function signOut() {
     await authClient.signOut();

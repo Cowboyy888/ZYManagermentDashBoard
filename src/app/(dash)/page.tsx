@@ -14,6 +14,9 @@ export default async function DashboardPage() {
   // Current month attendance summary
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
+  const canReadProduction = can(user.role, "production.read");
+  const canReadInventory  = can(user.role, "inventory.read");
+
   const [
     headcount,
     departments,
@@ -27,6 +30,11 @@ export default async function DashboardPage() {
     pendingLeaveCount,
     onLeaveTodayCount,
     hiringByMonth,
+    activeProductionOrders,
+    machineStatusCounts,
+    lowStockCount,
+    criticalAlarmCount,
+    wireRemainingKg,
   ] = await Promise.all([
     prisma.employee.count({ where: { status: "ACTIVE" } }).catch(() => 0),
 
@@ -120,41 +128,30 @@ export default async function DashboardPage() {
       });
       return Object.entries(counts).map(([month, count]) => ({ month, count }));
     }).catch(() => [] as { month: string; count: number }[]),
-  ]);
 
-  const canReadProduction = can(user.role, "production.read");
-  const canReadInventory  = can(user.role, "inventory.read");
-
-  const [
-    activeProductionOrders,
-    machineStatusCounts,
-    lowStockCount,
-    criticalAlarmCount,
-    wireRemainingKg,
-  ] = await Promise.all([
     canReadProduction
       ? prisma.productionOrder.count({ where: { status: "IN_PROGRESS" } }).catch(() => null)
-      : null,
+      : Promise.resolve(null),
 
     canReadProduction
       ? prisma.machine.groupBy({ by: ["status"], _count: { status: true } }).catch(() => null)
-      : null,
+      : Promise.resolve(null),
 
     canReadInventory
-      ? prisma.inventoryItem.findMany({ select: { currentStock: true, minStock: true } })
-          .then(items => items.filter(i => Number(i.currentStock) < Number(i.minStock)).length)
-          .catch(() => null)
-      : null,
+      ? prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*)::bigint AS count FROM "InventoryItem" WHERE "currentStock" < "minStock"
+        `.then(rows => Number(rows[0]?.count ?? 0)).catch(() => null)
+      : Promise.resolve(null),
 
     canReadProduction
       ? prisma.factoryAlarm.count({ where: { status: "ACTIVE", severity: "CRITICAL" } }).catch(() => null)
-      : null,
+      : Promise.resolve(null),
 
     canReadInventory
       ? prisma.wireInventory.aggregate({ _sum: { remainingKg: true } })
           .then(r => r._sum.remainingKg ? Number(r._sum.remainingKg) : 0)
           .catch(() => null)
-      : null,
+      : Promise.resolve(null),
   ]);
 
   // Resolve machine status into named counts

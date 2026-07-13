@@ -130,6 +130,8 @@ model User {
   documentLogs       PortalDocumentLog[]     @relation("DocLogUser")
   acknowledgedAlarms FactoryAlarm[]          @relation("AlarmAcknowledgedBy")
   resolvedAlarms     FactoryAlarm[]          @relation("AlarmResolvedBy")
+  productionPlans    ProductionPlan[]        @relation("PlanCreatedBy")
+  downtimeReports    DowntimeEvent[]         @relation("DowntimeReportedBy")
 
   @@index([role])
   @@map("user")
@@ -256,6 +258,7 @@ model Employee {
 
   attendance    AttendanceDay[]
   overtime      OvertimeEntry[]
+  shiftAssignments ShiftAssignment[]
   payslips             Payslip[]
   documents            EmployeeDocument[]
   leaveRequests        LeaveRequest[]
@@ -273,6 +276,7 @@ model Employee {
   scheduleAssignments         MaintenanceSchedule[]   @relation("ScheduleAssignedTo")
   operatedMachineMetrics      MachineMetric[]         @relation("MachineOperator")
   machineRuntimeLogs          MachineRuntimeLog[]     @relation("RuntimeOperator")
+  workExecutions              WorkExecution[]         @relation("WorkExecutionOperator")
 
   @@index([departmentId])
   @@index([status])
@@ -284,8 +288,55 @@ model Employee {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Shift & Work Schedule Management
+// ─────────────────────────────────────────────────────────────
+
+model Shift {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique
+  name           String
+  description    String?
+  shiftType      String   @default("DAY")  // DAY | AFTERNOON | NIGHT | ROTATING | CUSTOM
+  startTime      String                    // "HH:MM" 24-hour
+  endTime        String                    // "HH:MM" 24-hour
+  breakStart     String?                   // "HH:MM"
+  breakEnd       String?                   // "HH:MM"
+  workingHours   Decimal  @db.Decimal(4, 2)
+  otStartsAfter  String?                   // "HH:MM" — when overtime begins
+  gracePeriodMin Int      @default(15)     // minutes grace before marking late
+  color          String   @default("#3b82f6")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  assignments      ShiftAssignment[]
+  productionPlans  ProductionPlan[]
+
+  @@index([active])
+  @@index([shiftType])
+}
+
+model ShiftAssignment {
+  id            Int       @id @default(autoincrement())
+  shiftId       Int
+  shift         Shift     @relation(fields: [shiftId], references: [id])
+  employeeId    Int
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([shiftId])
+  @@index([employeeId])
+  @@index([effectiveFrom])
+}
+
+// ─────────────────────────────────────────────────────────────
 // Attendance — marks not timestamps (arch §3.3)
 // One row per employee per date; AM + PM each a status.
+// Extended with rich daily status + timestamps for manual entry.
 // ─────────────────────────────────────────────────────────────
 
 enum AttendanceMark {
@@ -294,18 +345,36 @@ enum AttendanceMark {
   ABSENT    // ×
 }
 
+enum DailyStatus {
+  PRESENT
+  LATE
+  ABSENT
+  SICK_LEAVE
+  ANNUAL_LEAVE
+  PERSONAL_LEAVE
+  BUSINESS_TRIP
+  WORK_FROM_HOME
+  HALF_DAY
+  HOLIDAY
+}
+
 model AttendanceDay {
-  id         BigInt   @id @default(autoincrement())
-  employeeId Int
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  date       DateTime @db.Date
-  am         AttendanceMark
-  pm         AttendanceMark
+  id           BigInt       @id @default(autoincrement())
+  employeeId   Int
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date         DateTime     @db.Date
+  am           AttendanceMark
+  pm           AttendanceMark
   // Optional: distinguishes permitted vs unpermitted absence in reporting
-  leaveType  LeaveType?
-  note       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  leaveType    LeaveType?
+  note         String?
+  // ── Manual daily entry fields (nullable for backward compat) ──
+  dailyStatus  DailyStatus?
+  checkIn      DateTime?
+  checkOut     DateTime?
+  shiftType    String?      // DAY / AFTERNOON / NIGHT
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // The only hot query shape: a person's marks within a date window.
   @@unique([employeeId, date])
@@ -600,6 +669,8 @@ model Machine {
   alarms               FactoryAlarm[]
   oeeRecords           OEERecord[]
   iotDevices           IoTDevice[]
+  productionPlans      ProductionPlan[]
+  workExecutions       WorkExecution[]      @relation("WorkExecutionMachine")
 
   @@index([factoryAreaId])
   @@index([status])
@@ -661,6 +732,7 @@ model ProductionOrder {
   qualityInspections QualityInspection[]
   stockTransactions  StockTransaction[]
   machineMetrics     MachineMetric[]      @relation("MetricCurrentOrder")
+  workExecutions     WorkExecution[]
 
   @@index([status])
   @@index([plannedDate])
@@ -1982,4 +2054,105 @@ model IoTReading {
 
   @@index([deviceId, metric, recordedAt])
   @@index([recordedAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Production Planning & Scheduling (PPS)
+// ─────────────────────────────────────────────────────────────
+
+enum PlanStatus {
+  DRAFT
+  RELEASED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ProductionPlan {
+  id             Int        @id @default(autoincrement())
+  planNumber     String     @unique
+  title          String
+  description    String?
+  startDate      DateTime   @db.Date
+  endDate        DateTime   @db.Date
+  status         PlanStatus @default(DRAFT)
+  priority       String     @default("MEDIUM")  // LOW | MEDIUM | HIGH | URGENT
+  shiftId        Int?
+  machineId      Int?
+  targetQtyKg    Decimal?   @db.Decimal(10, 2)
+  notes          String?
+  createdById    String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  shift          Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  machine        Machine?  @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  createdBy      User      @relation("PlanCreatedBy", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([createdById])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Manufacturing Execution System (MES)
+// ─────────────────────────────────────────────────────────────
+
+enum ExecutionStatus {
+  QUEUED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum DowntimeReason {
+  BREAKDOWN
+  SETUP
+  MATERIAL_SHORTAGE
+  QUALITY_ISSUE
+  POWER_OUTAGE
+  PLANNED_MAINTENANCE
+  OTHER
+}
+
+model WorkExecution {
+  id              Int             @id @default(autoincrement())
+  orderId         Int
+  order           ProductionOrder @relation(fields: [orderId], references: [id])
+  operatorId      Int?
+  operator        Employee?       @relation("WorkExecutionOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+  machineId       Int?
+  machine         Machine?        @relation("WorkExecutionMachine", fields: [machineId], references: [id], onDelete: SetNull)
+  status          ExecutionStatus @default(QUEUED)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  qtyProduced     Int             @default(0)
+  qtyScrap        Int             @default(0)
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  downtimeEvents  DowntimeEvent[]
+
+  @@index([orderId])
+  @@index([operatorId])
+  @@index([status])
+}
+
+model DowntimeEvent {
+  id              Int            @id @default(autoincrement())
+  executionId     Int
+  execution       WorkExecution  @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  reason          DowntimeReason
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationMin     Int?
+  notes           String?
+  reportedById    String
+  reportedBy      User           @relation("DowntimeReportedBy", fields: [reportedById], references: [id])
+  createdAt       DateTime       @default(now())
+
+  @@index([executionId])
+  @@index([reason])
 }
