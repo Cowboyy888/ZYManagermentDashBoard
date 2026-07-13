@@ -3,7 +3,7 @@ import { verifyCronSecret } from "@/lib/cron";
 import { prisma } from "@/lib/db";
 import { notifyRole } from "@/lib/notify";
 import { sendTelegramMessage } from "@/lib/telegram";
-import { nowICT } from "@/lib/utils/date";
+import { startOfTodayICT } from "@/lib/utils/date";
 
 export const maxDuration = 30;
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const today = nowICT();
+    const today = startOfTodayICT();
     const in3Days = new Date(today);
     in3Days.setDate(in3Days.getDate() + 3);
 
