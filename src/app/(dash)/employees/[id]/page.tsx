@@ -46,10 +46,16 @@ export default async function EmployeeProfilePage({ params }: { params: Promise<
           hireDate: emp.hireDate.toISOString(),
           contractExpiry: emp.contractExpiry ? emp.contractExpiry.toISOString() : null,
           probationEnd: emp.probationEnd ? emp.probationEnd.toISOString() : null,
+          createdAt: emp.createdAt.toISOString(),
+          updatedAt: emp.updatedAt.toISOString(),
           attendance: emp.attendance.map(a => ({
             ...a,
             id: Number(a.id),
             date: a.date.toISOString(),
+            checkIn: a.checkIn ? a.checkIn.toISOString() : null,
+            checkOut: a.checkOut ? a.checkOut.toISOString() : null,
+            createdAt: a.createdAt.toISOString(),
+            updatedAt: a.updatedAt.toISOString(),
           })),
           overtime: emp.overtime.map(o => ({
             ...o,
@@ -57,6 +63,7 @@ export default async function EmployeeProfilePage({ params }: { params: Promise<
             hours: Number(o.hours),
             amountUsd: Number(o.amountUsd),
             date: o.date.toISOString(),
+            createdAt: o.createdAt.toISOString(),
           })),
           documents: emp.documents.map(d => ({
             ...d,
