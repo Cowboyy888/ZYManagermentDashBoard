@@ -25,54 +25,67 @@ export default async function EmployeeProfilePage({ params }: { params: Promise<
   ]);
 
   if (!res.ok || !res.data) notFound();
-  const emp = res.data;
   const canEdit = can(user.role, "employee.update");
+
+  // Destructure all Date/Decimal/nested-with-Date fields out before passing to Client Component.
+  // Next.js cannot serialize Date objects across the server→client boundary.
+  const {
+    createdAt: _ca, updatedAt: _ua,
+    birthday: _bd, hireDate: _hd, contractExpiry: _ce, probationEnd: _pe,
+    dailyRateUsd: _dr,
+    position: rawPos, factoryArea: rawFa, department: rawDept,
+    attendance: rawAtt, overtime: rawOt, documents: rawDocs,
+    ...empBase
+  } = res.data;
+
+  const safeEmp = {
+    ...empBase,
+    dailyRateUsd: Number(res.data.dailyRateUsd),
+    emergencyContact: res.data.emergencyContact as { name?: string; phone?: string; relation?: string } | null,
+    birthday: _bd ? _bd.toISOString() : null,
+    hireDate: _hd.toISOString(),
+    contractExpiry: _ce ? _ce.toISOString() : null,
+    probationEnd: _pe ? _pe.toISOString() : null,
+    department: rawDept ? { id: rawDept.id, name: rawDept.name } : null,
+    position: rawPos ? { id: rawPos.id, name: rawPos.name } : null,
+    factoryArea: rawFa ? { id: rawFa.id, name: rawFa.name, code: rawFa.code } : null,
+    attendance: rawAtt.map(a => ({
+      id: Number(a.id),
+      date: a.date.toISOString(),
+      am: a.am,
+      pm: a.pm,
+    })),
+    overtime: rawOt.map(o => ({
+      id: Number(o.id),
+      date: o.date.toISOString(),
+      hours: Number(o.hours),
+      amountUsd: Number(o.amountUsd),
+      band: o.band,
+      description: o.description,
+    })),
+    documents: rawDocs.map(d => ({
+      id: Number(d.id),
+      type: d.type,
+      filename: d.filename,
+      url: d.url,
+      fileSize: d.fileSize ?? null,
+      mimeType: d.mimeType ?? null,
+      expiryDate: d.expiryDate ? d.expiryDate.toISOString() : null,
+      notes: d.notes ?? null,
+      createdAt: d.createdAt.toISOString(),
+    })),
+  };
 
   return (
     <div style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
-      {/* Breadcrumb */}
       <nav style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-3)" }}>
         <Link href="/employees" style={{ color: "var(--text-3)", textDecoration: "none" }}>Employees</Link>
         <span>/</span>
-        <span style={{ color: "var(--text)" }}>{emp.nameEn}</span>
+        <span style={{ color: "var(--text)" }}>{res.data.nameEn}</span>
       </nav>
 
       <EmployeeProfileClient
-        emp={{
-          ...emp,
-          dailyRateUsd: Number(emp.dailyRateUsd),
-          emergencyContact: emp.emergencyContact as { name?: string; phone?: string; relation?: string } | null,
-          birthday: emp.birthday ? emp.birthday.toISOString() : null,
-          hireDate: emp.hireDate.toISOString(),
-          contractExpiry: emp.contractExpiry ? emp.contractExpiry.toISOString() : null,
-          probationEnd: emp.probationEnd ? emp.probationEnd.toISOString() : null,
-          createdAt: emp.createdAt.toISOString(),
-          updatedAt: emp.updatedAt.toISOString(),
-          attendance: emp.attendance.map(a => ({
-            ...a,
-            id: Number(a.id),
-            date: a.date.toISOString(),
-            checkIn: a.checkIn ? a.checkIn.toISOString() : null,
-            checkOut: a.checkOut ? a.checkOut.toISOString() : null,
-            createdAt: a.createdAt.toISOString(),
-            updatedAt: a.updatedAt.toISOString(),
-          })),
-          overtime: emp.overtime.map(o => ({
-            ...o,
-            id: Number(o.id),
-            hours: Number(o.hours),
-            amountUsd: Number(o.amountUsd),
-            date: o.date.toISOString(),
-            createdAt: o.createdAt.toISOString(),
-          })),
-          documents: emp.documents.map(d => ({
-            ...d,
-            id: Number(d.id),
-            fileSize: d.fileSize ?? null,
-            expiryDate: d.expiryDate ? d.expiryDate.toISOString() : null,
-            createdAt: d.createdAt.toISOString(),
-          })),
-        }}
+        emp={safeEmp}
         canEdit={canEdit}
         positions={positions.map(p => ({ id: p.id, name: p.name, level: p.level }))}
         factoryAreas={factoryAreas.map(a => ({ id: a.id, name: a.name, code: a.code }))}
