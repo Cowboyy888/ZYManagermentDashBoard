@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { scryptAsync } from "@noble/hashes/scrypt";
 import { randomUUID } from "node:crypto";
+import { scryptAsync } from "@noble/hashes/scrypt.js";
 
 // ONE-TIME route — delete after use. Protected by CRON_SECRET.
 export async function GET(req: Request) {
@@ -13,14 +13,32 @@ export async function GET(req: Request) {
   const NEW_EMAIL    = "tempowner@zysteel.local";
   const NEW_PASSWORD = "ZyOwner2025abc";
 
-  // ── Hash password exactly as @better-auth/utils/password does ──────────
-  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
-  const salt = Buffer.from(saltBytes).toString("hex");
-  const key  = await scryptAsync(NEW_PASSWORD.normalize("NFKC"), salt, {
-    N: 16384, r: 16, p: 1, dkLen: 64,
-    maxmem: 128 * 16384 * 16 * 2,
-  });
-  const hashed = `${salt}:${Buffer.from(key).toString("hex")}`;
+  // ?check=1 → show DB state without creating anything
+  if (url.searchParams.get("check") === "1") {
+    const u = await prisma.user.findUnique({ where: { email: NEW_EMAIL } });
+    const accts = u
+      ? await prisma.account.findMany({ where: { userId: u.id }, select: { providerId: true, password: true } })
+      : [];
+    return NextResponse.json({
+      user: u ? { id: u.id, email: u.email, role: u.role, emailVerified: u.emailVerified } : null,
+      accounts: accts.map(a => ({ providerId: a.providerId, passwordLength: a.password?.length ?? 0, passwordPrefix: a.password?.slice(0, 20) ?? null })),
+    });
+  }
+
+  // ── Hash exactly as @better-auth/utils/password does ──────────────────
+  // Format: <32-char-hex-salt>:<128-char-hex-key>
+  const saltBytes = new Uint8Array(16);
+  crypto.getRandomValues(saltBytes);
+  const toHex = (u8: Uint8Array) =>
+    Array.from(u8).map(b => b.toString(16).padStart(2, "0")).join("");
+  const salt   = toHex(saltBytes);
+  // Pass strings, not Uint8Arrays — matches @better-auth/utils/password exactly
+  const keyU8  = await scryptAsync(
+    NEW_PASSWORD.normalize("NFKC"),
+    salt,
+    { N: 16384, r: 16, p: 1, dkLen: 64, maxmem: 128 * 16384 * 16 * 2 },
+  );
+  const hashed = `${salt}:${toHex(keyU8)}`;
 
   // ── Remove any previous temp user ──────────────────────────────────────
   const existing = await prisma.user.findUnique({ where: { email: NEW_EMAIL } });
@@ -39,8 +57,6 @@ export async function GET(req: Request) {
       email: NEW_EMAIL,
       emailVerified: true,
       role: "OWNER",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
   });
 
@@ -51,8 +67,6 @@ export async function GET(req: Request) {
       providerId: "credential",
       userId,
       password: hashed,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
   });
 
