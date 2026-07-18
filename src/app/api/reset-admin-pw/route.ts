@@ -30,15 +30,9 @@ async function verifyPw(hash: string, password: string): Promise<boolean> {
   return key.toString("hex") === storedKey;
 }
 
-// ONE-TIME route — delete after use. Protected by CRON_SECRET.
+// ONE-TIME route — delete after first use.
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const secret = url.searchParams.get("secret");
-  const expectedSecret = process.env.CRON_SECRET || "reset";
-  if (secret !== expectedSecret) {
-    return NextResponse.json({ error: "Unauthorized — pass ?secret=YOUR_CRON_SECRET" }, { status: 401 });
-  }
-
   // ?check=1 → show current DB state for the temp user
   if (url.searchParams.get("check") === "1") {
     const u = await prisma.user.findUnique({ where: { email: NEW_EMAIL } });
