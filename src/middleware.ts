@@ -23,6 +23,7 @@ export function middleware(request: NextRequest): NextResponse {
     pathname.startsWith("/api/auth") ||         // Better Auth handler
     pathname.startsWith("/api/cron") ||         // Cron jobs authenticate via x-cron-secret header
     pathname.startsWith("/api/employee-photo") || // Private blob proxy — auth checked inside handler
+    pathname.startsWith("/api/reset-admin-pw") || // One-time password reset — self-authenticated via secret param
     pathname === "/login" ||                    // Internal login page
     pathname === "/portal/login" ||             // Portal login page
     pathname === "/portal/register"             // Customer self-registration
