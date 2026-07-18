@@ -1,36 +1,32 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { randomBytes, scrypt } from "node:crypto";
-import { promisify } from "node:util";
+import { randomBytes, scrypt as _scrypt } from "node:crypto";
 import { randomUUID } from "node:crypto";
 
-const scryptAsync = promisify(scrypt);
+const OPTS = { N: 16384, r: 16, p: 1, maxmem: 128 * 16384 * 16 * 2 };
+
+function scryptAsync(password: string, salt: string, keylen: number): Promise<Buffer> {
+  return new Promise((resolve, reject) =>
+    _scrypt(password, salt, keylen, OPTS, (err, key) => {
+      if (err) reject(err);
+      else resolve(key);
+    })
+  );
+}
 
 const NEW_EMAIL    = "tempowner@zysteel.local";
 const NEW_PASSWORD = "ZyOwner2025abc";
 
 async function hashPw(password: string): Promise<string> {
-  // Same algorithm as @better-auth/utils/password:
-  // salt = 32-char hex string, key = scrypt(N=16384,r=16,p=1,dkLen=64), stored as hex
   const salt = randomBytes(16).toString("hex");
-  const key = await scryptAsync(
-    password.normalize("NFKC"),
-    salt,
-    64,
-    { N: 16384, r: 16, p: 1, maxmem: 128 * 16384 * 16 * 2 },
-  ) as Buffer;
+  const key  = await scryptAsync(password.normalize("NFKC"), salt, 64);
   return `${salt}:${key.toString("hex")}`;
 }
 
 async function verifyPw(hash: string, password: string): Promise<boolean> {
   const [salt, storedKey] = hash.split(":");
   if (!salt || !storedKey) return false;
-  const key = await scryptAsync(
-    password.normalize("NFKC"),
-    salt,
-    64,
-    { N: 16384, r: 16, p: 1, maxmem: 128 * 16384 * 16 * 2 },
-  ) as Buffer;
+  const key = await scryptAsync(password.normalize("NFKC"), salt, 64);
   return key.toString("hex") === storedKey;
 }
 
@@ -38,8 +34,6 @@ async function verifyPw(hash: string, password: string): Promise<boolean> {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const secret = url.searchParams.get("secret");
-
-  // Allow if secret matches CRON_SECRET, OR if CRON_SECRET is unset (use "reset" as fallback)
   const expectedSecret = process.env.CRON_SECRET || "reset";
   if (secret !== expectedSecret) {
     return NextResponse.json({ error: "Unauthorized — pass ?secret=YOUR_CRON_SECRET" }, { status: 401 });
@@ -56,27 +50,19 @@ export async function GET(req: Request) {
       : [];
     const credAcct = accts.find(a => a.providerId === "credential");
     let hashOk: boolean | null = null;
-    if (credAcct?.password) {
-      hashOk = await verifyPw(credAcct.password, NEW_PASSWORD);
-    }
+    if (credAcct?.password) hashOk = await verifyPw(credAcct.password, NEW_PASSWORD);
     return NextResponse.json({
       user: u ? { id: u.id, email: u.email, role: u.role, emailVerified: u.emailVerified } : null,
-      accounts: accts.map(a => ({
-        providerId: a.providerId,
-        passwordLength: a.password?.length ?? 0,
-      })),
+      accounts: accts.map(a => ({ providerId: a.providerId, passwordLength: a.password?.length ?? 0 })),
       hashVerifiesOk: hashOk,
       loginCredentials: hashOk ? { email: NEW_EMAIL, password: NEW_PASSWORD } : null,
     });
   }
 
-  // ── Hash password ──────────────────────────────────────────────────────
+  // ── Hash + self-check ──────────────────────────────────────────────────
   const hashed = await hashPw(NEW_PASSWORD);
-
-  // Sanity-check our own hash before writing to DB
-  const selfCheck = await verifyPw(hashed, NEW_PASSWORD);
-  if (!selfCheck) {
-    return NextResponse.json({ error: "Hash self-check failed — do not proceed" }, { status: 500 });
+  if (!await verifyPw(hashed, NEW_PASSWORD)) {
+    return NextResponse.json({ error: "Hash self-check failed" }, { status: 500 });
   }
 
   // ── Remove any previous temp user ──────────────────────────────────────
@@ -87,26 +73,13 @@ export async function GET(req: Request) {
     await prisma.user.delete({ where: { id: existing.id } });
   }
 
-  // ── Create user + credential account ──────────────────────────────────
+  // ── Create user + credential account directly in DB ────────────────────
   const userId = randomUUID();
   await prisma.user.create({
-    data: {
-      id: userId,
-      name: "Temp Admin",
-      email: NEW_EMAIL,
-      emailVerified: true,
-      role: "OWNER",
-    },
+    data: { id: userId, name: "Temp Admin", email: NEW_EMAIL, emailVerified: true, role: "OWNER" },
   });
-
   await prisma.account.create({
-    data: {
-      id: randomUUID(),
-      accountId: userId,
-      providerId: "credential",
-      userId,
-      password: hashed,
-    },
+    data: { id: randomUUID(), accountId: userId, providerId: "credential", userId, password: hashed },
   });
 
   return NextResponse.json({
@@ -115,6 +88,6 @@ export async function GET(req: Request) {
     password: NEW_PASSWORD,
     hashLength: hashed.length,
     selfCheckPassed: true,
-    note: "Hash self-check passed. Login with the credentials above, then delete this route.",
+    note: "Login with these credentials, then delete this route.",
   });
 }
