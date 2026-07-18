@@ -40,7 +40,7 @@ export async function GET(req: Request) {
   const secret = url.searchParams.get("secret");
 
   // Allow if secret matches CRON_SECRET, OR if CRON_SECRET is unset (use "reset" as fallback)
-  const expectedSecret = process.env.CRON_SECRET ?? "reset";
+  const expectedSecret = process.env.CRON_SECRET || "reset";
   if (secret !== expectedSecret) {
     return NextResponse.json({ error: "Unauthorized — pass ?secret=YOUR_CRON_SECRET" }, { status: 401 });
   }
